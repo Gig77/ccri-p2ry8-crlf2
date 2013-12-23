@@ -3,3 +3,102 @@ SHELL=/bin/bash  # required to make pipefail work
 .SECONDARY:      # do not delete any intermediate files
 
 LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S ", localtime), $$ARGV[0], "$@: $$_";'
+
+PATIENTS = 108 839 92 B36 BB16 GI13 HV57 HV80 LU3 N7 S23 SN18
+PATIENTS_DIA = 242 360 365 379 400 506 769 833 948
+PATIENTS_REL2 = 108 737 
+
+#all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
+all: filtered-variants.cosmic.merged.tsv 
+
+#-----------	
+# SNPEFF
+#-----------	
+snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations/%_calls.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
+		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
+		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
+		2>&1 1>$(PWD)/$@.part) | $(LOG)
+	mv $@.part $@
+
+snpeff/%.indel.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_indels/%_indel.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
+		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
+		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
+		2>&1 1>$(PWD)/$@.part) | $(LOG)
+	mv $@.part $@
+
+snpeff/%.dbsnp.snpeff.vcf: snpeff/%.dbsnp.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -Xmx2g -jar snpEff.jar -v -lof hg19 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	mv $@.part $@
+
+snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar dbnsfp -v ~/generic/data/dbNSFP-2.1/dbNSFP2.1.txt $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	mv $@.part $@
+
+#-------------
+# final lists
+#-------------
+filtered-variants.tsv: $(foreach P, $(PATIENTS), filtered_variants/$P_rem_dia.snp.filtered.tsv filtered_variants/$P_rem_rel.snp.filtered.tsv) \
+					   $(foreach P, $(PATIENTS_DIA), filtered_variants/$P_rem_dia.snp.filtered.tsv) \
+					   $(foreach P, $(PATIENTS_REL2), filtered_variants/$P_rem_rel2.snp.filtered.tsv) \
+					   filtered_variants/737_rem_dia.indel.filtered.tsv \
+					   filtered_variants/737_rem_rel.indel.filtered.tsv \
+					   filtered_variants/737_rem_rel2.indel.filtered.tsv \
+					   filtered_variants/108_rem_dia.indel.filtered.tsv \
+					   filtered_variants/108_rem_rel.indel.filtered.tsv \
+					   filtered_variants/108_rem_rel2.indel.filtered.tsv \
+					   ~/hdall/scripts/filter-variants.pl 
+	perl  ~/hdall/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
+	cat filtered_variants/*.filtered.tsv >> $@.part
+	mv $@.part $@
+
+filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v65/CosmicMutantExport_v65_280513.tsv ~/hdall/scripts/annotate-cosmic.pl
+	cat $(word 1,$^) | perl ~/hdall/scripts/annotate-cosmic.pl \
+		--cosmic-mutation-file $(word 2,$^) \
+		--only-confirmed \
+		2>&1 1>$@.part | $(LOG)
+	mv $@.part $@ 
+
+filtered-variants.cosmic.merged.tsv: filtered-variants.cosmic.tsv
+	Rscript ~/p2ry8-crlf2/scripts/merge-filtered-variants.R 2>&1 | $(LOG)
+
+filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.vcf ~/hdall/results/curated-recected-variants.tsv ~/hdall/scripts/filter-variants.pl ~/hdall/results/remission-variants.tsv.gz.tbi
+	mkdir -p filtered_variants
+	perl ~/hdall/scripts/filter-variants.pl \
+		--sample $* \
+		--vcf-in $< \
+		--variant-type snp \
+		--vcf-out filtered_variants/$*.dbsnp.snpeff.dbNSFP.filtered.vcf \
+		--rmsk-file ~/generic/data/hg19/hg19.rmsk.txt.gz \
+		--simpleRepeat-file ~/generic/data/hg19/hg19.simpleRepeat.txt.gz \
+		--segdup-file ~/generic/data/hg19/hg19.genomicSuperDups.txt.gz \
+		--blacklist-file ~/generic/data/hg19/hg19.wgEncodeDacMapabilityConsensusExcludable.txt.gz \
+		--g1k-accessible ~/generic/data/hg19/paired.end.mapping.1000G..pilot.bed.gz \
+		--ucscRetro ~/generic/data/hg19/hg19.ucscRetroAli5.txt.gz \
+		--rejected-variants-file ~/hdall/results/curated-recected-variants.tsv \
+		--remission-variants-file ~/hdall/results/remission-variants.tsv.gz \
+		2>&1 1>$@.part | $(LOG)
+	mv $@.part $@
+
+filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.vcf ~/hdall/results/curated-recected-variants.tsv ~/hdall/scripts/filter-variants.pl ~/hdall/results/remission-variants.tsv.gz.tbi
+	mkdir -p filtered_variants
+	perl ~/hdall/scripts/filter-variants.pl \
+		--sample $* \
+		--vcf-in $< \
+		--variant-type indel \
+		--vcf-out filtered_variants/$*.indel.dbsnp.snpeff.dbNSFP.filtered.vcf \
+		--rmsk-file ~/generic/data/hg19/hg19.rmsk.txt.gz \
+		--simpleRepeat-file ~/generic/data/hg19/hg19.simpleRepeat.txt.gz \
+		--segdup-file ~/generic/data/hg19/hg19.genomicSuperDups.txt.gz \
+		--blacklist-file ~/generic/data/hg19/hg19.wgEncodeDacMapabilityConsensusExcludable.txt.gz \
+		--g1k-accessible ~/generic/data/hg19/paired.end.mapping.1000G..pilot.bed.gz \
+		--ucscRetro ~/generic/data/hg19/hg19.ucscRetroAli5.txt.gz \
+		--rejected-variants-file ~/hdall/results/curated-recected-variants.tsv \
+		--remission-variants-file ~/hdall/results/remission-variants.tsv.gz \
+		2>&1 1>$@.part | $(LOG)
+	mv $@.part $@	
