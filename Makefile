@@ -20,6 +20,7 @@ snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations/%_calls.vcf ~/to
 		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
 		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
+	test -s $@.part
 	mv $@.part $@
 
 snpeff/%.indel.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_indels/%_indel.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
@@ -28,6 +29,7 @@ snpeff/%.indel.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_indels/%_indel.vcf ~
 		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
 		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
+	test -s $@.part
 	mv $@.part $@
 
 snpeff/%.dbsnp.snpeff.vcf: snpeff/%.dbsnp.vcf
@@ -46,6 +48,8 @@ snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf
 filtered-variants.tsv: $(foreach P, $(PATIENTS), filtered_variants/$P_rem_dia.snp.filtered.tsv filtered_variants/$P_rem_rel.snp.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_DIA), filtered_variants/$P_rem_dia.snp.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_REL2), filtered_variants/$P_rem_rel2.snp.filtered.tsv) \
+					   filtered_variants/715_rem_rel3.snp.filtered.tsv \
+					   filtered_variants/715_rem_rel3.indel.filtered.tsv \
 					   filtered_variants/737_rem_dia.indel.filtered.tsv \
 					   filtered_variants/737_rem_rel.indel.filtered.tsv \
 					   filtered_variants/737_rem_rel2.indel.filtered.tsv \
@@ -57,7 +61,7 @@ filtered-variants.tsv: $(foreach P, $(PATIENTS), filtered_variants/$P_rem_dia.sn
 	cat filtered_variants/*.filtered.tsv >> $@.part
 	mv $@.part $@
 
-filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v65/CosmicMutantExport_v65_280513.tsv ~/hdall/scripts/annotate-cosmic.pl
+filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v67/CosmicMutantExport_v67_241013.tsv ~/hdall/scripts/annotate-cosmic.pl
 	cat $(word 1,$^) | perl ~/hdall/scripts/annotate-cosmic.pl \
 		--cosmic-mutation-file $(word 2,$^) \
 		--only-confirmed \
@@ -82,6 +86,7 @@ filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.vcf ~/hdall/r
 		--ucscRetro ~/generic/data/hg19/hg19.ucscRetroAli5.txt.gz \
 		--rejected-variants-file ~/hdall/results/curated-recected-variants.tsv \
 		--remission-variants-file ~/hdall/results/remission-variants.tsv.gz \
+		--evs-file ~/generic/data/evs/ESP6500SI-V2-SSA137.updatedRsIds.chrAll.snps_indels.txt.gz \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
@@ -100,5 +105,6 @@ filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.vcf ~
 		--ucscRetro ~/generic/data/hg19/hg19.ucscRetroAli5.txt.gz \
 		--rejected-variants-file ~/hdall/results/curated-recected-variants.tsv \
 		--remission-variants-file ~/hdall/results/remission-variants.tsv.gz \
+		--evs-file ~/generic/data/evs/ESP6500SI-V2-SSA137.updatedRsIds.chrAll.snps_indels.txt.gz \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@	
