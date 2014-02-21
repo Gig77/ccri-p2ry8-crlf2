@@ -8,8 +8,8 @@ PATIENTS = 108 839 92 B36 BB16 GI13 HV57 HV80 LU3 N7 S23 SN18
 PATIENTS_DIA = 242 360 365 379 400 506 769 833 948
 PATIENTS_REL2 = 108 737 
 
-#all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: filtered-variants.cosmic.merged.tsv 
+#all: filtered-variants.cosmic.tsv filtered-variants.cosmic.normaf.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
+all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv 
 
 #-----------	
 # SNPEFF
@@ -66,6 +66,12 @@ filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v67/Co
 		--cosmic-mutation-file $(word 2,$^) \
 		--only-confirmed \
 		2>&1 1>$@.part | $(LOG)
+	mv $@.part $@ 
+	
+filtered-variants.cosmic.normaf.tsv: filtered-variants.cosmic.tsv ~/hdall/results/cnv/hdall.cnv.tsv ~/hdall/scripts/normalize-af.pl
+	cat filtered-variants.cosmic.tsv | perl ~/hdall/scripts/normalize-af.pl \
+		--cnv-file ~/hdall/results/cnv/hdall.cnv.tsv \
+		2>&1 1>$@.part | tee -a make.log
 	mv $@.part $@ 
 
 filtered-variants.cosmic.merged.tsv: filtered-variants.cosmic.tsv
