@@ -12,7 +12,7 @@ PATIENTS_REL2 = 108 737
 PATIENTS_REL3 = 715 
 
 #all: filtered-variants.cosmic.tsv filtered-variants.cosmic.normaf.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv
+all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv segmented_coverage/allpatients.segmented-coverage.pdf coverage/coverage-plots-exome.png
 
 #-----------
 # DOWNLOAD
@@ -132,11 +132,32 @@ coverage: coverage/allpatients.PAR1-X-60001-2699520.pdf \
 		  coverage/allpatients.NUP214-9-133609878-134537138.pdf
 		  
 
-.PHONY: segmented-coverage
-segmented-coverage: $(foreach P, $(PATIENTS_MATCHED), segmented_coverage/$PD.segmented-coverage.tsv segmented_coverage/$PR.segmented-coverage.tsv segmented_coverage/$PC.segmented-coverage.tsv) \
-				    $(foreach P, $(PATIENTS_DIA_ONLY), segmented_coverage/$PD.segmented-coverage.tsv segmented_coverage/$PC.segmented-coverage.tsv)
+segmented_coverage/allpatients.segmented-coverage.pdf: $(foreach P, $(PATIENTS_MATCHED), segmented_coverage/$PD.segmented-coverage.pdf segmented_coverage/$PR.segmented-coverage.pdf) \
+								    				   $(foreach P, $(PATIENTS_DIA_ONLY), segmented_coverage/$PD.segmented-coverage.pdf)
+	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
+	mv $@.part $@
+	rm $^
 
-segmented_coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
+segmented_coverage/%D.segmented-coverage.pdf: segmented_coverage/%D.segmented-coverage.tsv segmented_coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
+		--patient $*D \
+		--tumor $(word 1,$^) \
+		--normal $(word 2,$^) \
+		--circos circos/$*D.cnv.circos.tsv \
+		--output $@.part
+	mv $@.part $@
+
+segmented_coverage/%R.segmented-coverage.pdf: segmented_coverage/%R.segmented-coverage.tsv segmented_coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
+		--patient $*R \
+		--tumor $(word 1,$^) \
+		--normal $(word 2,$^) \
+		--circos circos/$*R.cnv.circos.tsv \
+		--output $@.part
+	mv $@.part $@
+
+#segmented_coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
+segmented_coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam
 	~/tools/samtools-0.1.19/samtools depth -Q 1 $< \
 		| perl ~/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
 		2>&1 1>$@.part | $(LOG)
@@ -184,6 +205,27 @@ coverage/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage/patient$P
 	mv $@.part $@
 	rm $^
 
+coverage/coverage-plots-exome.png: $(foreach P, $(PATIENTS_MATCHED), coverage/$PD.coverage.bedtools.txt coverage/$PR.coverage.bedtools.txt coverage/$PC.coverage.bedtools.txt) \
+               					   $(foreach P, $(PATIENTS_DIA_ONLY), coverage/$PD.coverage.bedtools.txt coverage/$PC.coverage.bedtools.txt) \
+               					   ~/p2ry8-crlf2/scripts/plot-coverage.R
+	Rscript ~/p2ry8-crlf2/scripts/plot-coverage.R
+
+coverage/%.coverage.bedtools.txt: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed
+	samtools view -bq 1 -F 0x400 $< | bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
+	mv $@.part $@
+
+segmented_coverage/%C.segmented-coverage.chr21.pdf: segmented_coverage/%C.segmented-coverage.tsv segmented_coverage/B36C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
+	Rscript ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R \
+		--patient $*C \
+		--case $(word 1,$^) \
+		--control segmented_coverage/B36C.segmented-coverage.tsv \
+		--output $@.part
+	mv $@.part $@
+
+segmented_coverage/allpatients.segmented-coverage.chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), segmented_coverage/$PC.segmented-coverage.chr21.pdf)
+	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
+	mv $@.part $@
+	rm $^
 
 #-------------
 # final lists
@@ -192,8 +234,8 @@ filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered_variants/$P_re
 					   $(foreach P, $(PATIENTS_DIA_ONLY), filtered_variants/$P_rem_dia.snp.filtered.tsv filtered_variants/$P_rem_dia.indel.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_REL2), filtered_variants/$P_rem_rel2.snp.filtered.tsv filtered_variants/$P_rem_rel2.indel.filtered.tsv) \
 #					   $(foreach P, $(PATIENTS_REL3), filtered_variants/$P_rem_rel3.snp.filtered.tsv filtered_variants/$P_rem_rel3.indel.filtered.tsv) \
-					   ~/hdall/scripts/filter-variants.pl 
-	perl  ~/hdall/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
+					   ~/p2ry8-crlf2/scripts/filter-variants.pl 
+	perl  ~/p2ry8-crlf2/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
 	cat filtered_variants/*.filtered.tsv >> $@.part
 	mv $@.part $@
 
@@ -213,9 +255,9 @@ filtered-variants.cosmic.normaf.tsv: filtered-variants.cosmic.tsv ~/hdall/result
 filtered-variants.cosmic.merged.tsv: filtered-variants.cosmic.tsv
 	Rscript ~/p2ry8-crlf2/scripts/merge-filtered-variants.R 2>&1 | $(LOG)
 
-filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/hdall/scripts/filter-variants.pl
+filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/p2ry8-crlf2/scripts/filter-variants.pl
 	mkdir -p filtered_variants
-	perl ~/hdall/scripts/filter-variants.pl \
+	perl ~/p2ry8-crlf2/scripts/filter-variants.pl \
 		--sample $* \
 		--vcf-in $< \
 		--variant-type snp \
@@ -233,9 +275,9 @@ filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.dbNSFP.vcf ~/
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
-filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/hdall/scripts/filter-variants.pl
+filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/p2ry8-crlf2/scripts/filter-variants.pl
 	mkdir -p filtered_variants
-	perl ~/hdall/scripts/filter-variants.pl \
+	perl ~/p2ry8-crlf2/scripts/filter-variants.pl \
 		--sample $* \
 		--vcf-in $< \
 		--variant-type indel \

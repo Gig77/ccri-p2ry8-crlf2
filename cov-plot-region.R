@@ -19,7 +19,7 @@ option_list <- list(
 		make_option("--display-end", type="character", help="end coordinate of region to display")
 		)
 opt <- parse_args(OptionParser(option_list=option_list))
-#opt <- data.frame(patient="92", diagnosis="coverage/92D.exon-coverage.tsv", relapse="coverage/92R.exon-coverage.tsv", remission="coverage/92C.exon-coverage.tsv", output="coverage/92.PAR.pdf", stringsAsFactors=F)
+#opt <- data.frame(patient="Y", diagnosis="Y_dia.coverage.panel.tsv", relapse="Y_rel.coverage.panel.tsv", remission="Y_rem.coverage.panel.tsv", output="../region-coverage/patientY.IKZF2-2-211852462-217849831.pdf", 'region-name'="IKZF2", 'display-chrom'="chr2", 'display-start'=211852462, 'display-end'=217849831, stringsAsFactors=F, check.names=F)
 
 if (invalid(opt$patient)) stop("patient not specified")
 if (invalid(opt$diagnosis) && invalid(opt$relapse)) stop("diagnosis sample, relapse sample, or both need to be specified")
@@ -75,6 +75,9 @@ if (!invalid(opt$relapse)) {
 
 # get gene coordinates
 dia$gene <- sapply(strsplit(as.character(dia$name), ":"), "[", 3)
+if (is.na(dia$gene[1])) {
+	dia$gene <- sapply(strsplit(as.character(dia$name), "-"), "[", 1)
+}
 genes <- data.frame(gene=aggregate(start~gene, dia, min)$gene, start=aggregate(start~gene, dia, min)$start, end=aggregate(end~gene, dia, max)$end)
 if (length(display.genes) > 0) genes <- genes[genes$gene %in% display.genes,]
 genes <- genes[order(genes$start),]
