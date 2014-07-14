@@ -12,7 +12,7 @@ PATIENTS_REL2 = 108 737
 PATIENTS_REL3 = 715 
 
 #all: filtered-variants.cosmic.tsv filtered-variants.cosmic.normaf.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv segmented_coverage/allpatients.segmented-coverage.pdf coverage/coverage-plots-exome.png
+all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv segmented_coverage/allpatients.segmented-coverage.pdf coverage/coverage-plots-exome.png picard
 
 #-----------
 # DOWNLOAD
@@ -294,3 +294,67 @@ filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.dbNSF
 		--min-num-rem-to-exclude 3 \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@	
+	
+#----------------
+# PICARD
+#----------------
+
+.PHONY: picard
+picard: 
+
+picard/%.picard.insertsize.out: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar
+	java -jar ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar \
+		INPUT=$< \
+		HISTOGRAM_FILE=picard/$*.picard.insertsize.pdf \
+		OUTPUT=$@.part \
+		STOP_AFTER=10000000
+	mv $@.part $@
+	
+#---------------
+# PINDEL
+#---------------
+
+pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out picard/$PR.picard.insertsize.out) \
+				   $(foreach P, $(PATIENTS_DIA_ONLY), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out) \
+		           $(foreach P, $(PATIENTS_REL2), picard/$PR2.picard.insertsize.out) \
+		           $(foreach P, $(PATIENTS_REL3), picard/$PR3.picard.insertsize.out)
+	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/home/STANNANET/christian.frech/p2ry8-crlf2/data/bam/$$1.duplicate_marked.realigned.recalibrated.bam\t$$2\t$$1\n"; }' > $@.part 
+	mv $@.part $@ 
+
+pindel/pindel.out: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
+	~/tools/pindel-0.2.4w/pindel \
+		--fasta ~/generic/data/broad/hs37d5.fa \
+		--config-file pindel/pindel.cfg \
+		--output-prefix pindel/allsamples \
+		--report_long_insertions true \
+		--NormalSamples true \
+		--minimum_support_for_event 10 \
+		--number_of_threads 20
+
+pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D pindel/allsamples_SI
+	~/tools/pindel-0.2.4w/pindel2vcf -p pindel/allsamples_D -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v pindel/allsamples_D.vcf
+	~/tools/pindel-0.2.4w/pindel2vcf -p pindel/allsamples_SI -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v pindel/allsamples_SI.vcf 
+	~/tools/vcftools_0.1.10/bin/vcf-concat \
+		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_D.vcf) \
+		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_SI.vcf) \
+		| ~/tools/vcftools_0.1.10/bin/vcf-sort > $@.part
+	mv $@.part $@
+
+pindel/allsamples.combined.filtered.dbsnp.vcf: ~/p2ry8-crlf2/results/pindel/allsamples.combined.filtered.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
+		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
+		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
+		2>&1 1>$(PWD)/$@.part) | $(LOG)
+	test -s $@.part
+	mv $@.part $@
+
+pindel/allsamples.combined.filtered.dbsnp.snpeff.vcf: pindel/allsamples.combined.filtered.dbsnp.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -Xmx2g -jar snpEff.jar -v -lof hg19 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	mv $@.part $@
+
+pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf: pindel/allsamples.combined.filtered.dbsnp.snpeff.vcf
+	PWD=$(pwd)
+	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar dbnsfp -v ~/generic/data/dbNSFP-2.1/dbNSFP2.1.txt $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	mv $@.part $@
