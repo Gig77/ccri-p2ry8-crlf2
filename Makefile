@@ -321,7 +321,10 @@ pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsiz
 	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/home/STANNANET/christian.frech/p2ry8-crlf2/data/bam/$$1.duplicate_marked.realigned.recalibrated.bam\t$$2\t$$1\n"; }' > $@.part 
 	mv $@.part $@ 
 
-pindel/pindel.out: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
+.PHONY: pindel
+pindel: pindel/allsamples.pindel.tsv
+
+pindel/allsamples_D pindel/allsamples_SI: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
 	~/tools/pindel-0.2.4w/pindel \
 		--fasta ~/generic/data/broad/hs37d5.fa \
 		--config-file pindel/pindel.cfg \
@@ -340,11 +343,11 @@ pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D pindel/allsamples_S
 		| ~/tools/vcftools_0.1.10/bin/vcf-sort > $@.part
 	mv $@.part $@
 
-pindel/allsamples.combined.filtered.dbsnp.vcf: ~/p2ry8-crlf2/results/pindel/allsamples.combined.filtered.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
+pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
 	PWD=$(pwd)
 	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
 		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
-		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
+		<(cat ~/p2ry8-crlf2/results/$< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
 	test -s $@.part
 	mv $@.part $@
@@ -358,3 +361,7 @@ pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf: pindel/allsamples.c
 	PWD=$(pwd)
 	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar dbnsfp -v ~/generic/data/dbNSFP-2.1/dbNSFP2.1.txt $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
+
+pindel/allsamples.pindel.tsv: pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf ~/p2ry8-crlf2/scripts/pindel-vcf-to-tsv.pl
+	perl ~/p2ry8-crlf2/scripts/pindel-vcf-to-tsv.pl --vcf-in $< > $@.part
+	mv $@.part $@ 

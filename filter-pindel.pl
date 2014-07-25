@@ -14,7 +14,7 @@ use Carp;
 my ($vcf_in);
 GetOptions
 (
-	"vcf-in=s" => \$vcf_in,  # VCF input file
+	"vcf-in=s" => \$vcf_in  # VCF input file
 );
 
 croak "ERROR: --vcf-in not specified" if (!$vcf_in);
@@ -58,6 +58,7 @@ my (@samples) = $vcf->get_samples();
 my $cmd = "grep -P '^#' $vcf_in";
 system($cmd) == 0 or die "ERROR: grep vcf header failed: $cmd\n";
 
+my %variants;
 while (my $line = $vcf->next_line())
 {
 	my $x = $vcf->next_data_hash($line);
@@ -83,9 +84,6 @@ while (my $line = $vcf->next_line())
 
 	next if ($num_rem > 0 or $num_tum < 1);
 
-#	print Dumper($x);
-#	exit;		
-	
 	print "$line";
 }
 	
