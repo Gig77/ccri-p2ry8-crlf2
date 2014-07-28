@@ -11,13 +11,15 @@ use Getopt::Long;
 use Tabix;
 use Carp;
 
-my ($vcf_in);
+my ($vcf_in, $evs_file);
 GetOptions
 (
-	"vcf-in=s" => \$vcf_in  # VCF input file
+	"vcf-in=s" => \$vcf_in,  # VCF input file
+	"evs-file=s" => \$evs_file # TABIX indexed file with wariants from Exome Variant Server (http://evs.gs.washington.edu/EVS/)
 );
 
 croak "ERROR: --vcf-in not specified" if (!$vcf_in);
+croak "ERROR: --evs-file not specified" if (!$evs_file);
 
 my %rem_samples = (
 	'839C' => 1,
@@ -44,6 +46,7 @@ my %rem_samples = (
 	'108C' => 1
 );
 
+my $evs = Tabix->new(-data => $evs_file);
 
 $| = 1; # turn on autoflush
 
@@ -80,20 +83,63 @@ $vcf->parse_header();
 
 my (@samples) = $vcf->get_samples();
 
-print "sample\tchr\tpos\tdbSNP\tref\talt\tgene\timpact\teffect\tdp_rem\tdp_leu\taf\n";
+print "sample\tchr\tpos\tdbSNP\tref\talt\tgene\timpact\teffect\tnon_silent\tdp_rem_ref\tdp_rem_alt\tdp_leu_ref\tdp_leu_altleu\taf\tevs\n";
 while (my $line = $vcf->next_line())
 {
 	my $x = $vcf->next_data_hash($line);
 	my ($gene, $add_genes, $impact, $effect, $affected_exon, $aa_change) = get_impact($x->{INFO}{EFF});
 
+	my $non_silent = 0;
+	$non_silent = 1 if ($effect eq "STOP_GAINED" or $effect eq "STOP_LOST" or $effect eq "SPLICE_SITE_DONOR" or $effect eq "SPLICE_SITE_ACCEPTOR" or $effect eq "FRAME_SHIFT" or $effect eq "CODON_CHANGE_PLUS_CODON_INSERTION" or $effect eq "CODON_DELETION" or $effect eq "NON_SYNONYMOUS_CODING" or $effect eq "CODON_INSERTION" or $effect eq "CODON_CHANGE_PLUS_CODON_DELETION" or $effect eq "NON_SYNONYMOUS_START" or $effect eq "START_LOST");
+
+	my ($chr, $pos) = ("chr".$x->{CHROM}, $x->{POS});
+
+	# ----- annotate variants found in Exome Variant Server
+	my %evss;
+	{
+		my $iter = $evs->query($chr, $pos-1, $pos);
+		if ($iter and $iter->{_})
+		{
+			while (my $line = $evs->read($iter)) 
+			{
+				my ($echr, $epos, $rsID, $dbSNPVersion, $alleles, $europeanAmericanAlleleCount, $africanAmericanAlleleCount, $allAlleleCount, $MAFinPercent_EA_AA_All, $europeanAmericanGenotypeCount, 
+					$africanAmericanGenotypeCount, $allGenotypeCount, $avgSampleReadDepth, $genes, $geneAccession, $functionGVS, $hgvsProteinVariant, $hgvsCdnaVariant, $codingDnaSize, 
+					$conservationScorePhastCons, $conservationScoreGERP, $granthamScore, $polyphen2_score, $refBaseNCBI37, $chimpAllele, $clinicalInfo, $filterStatus, $onIlluminaHumanExomeChip,
+					$gwasPubMedInfo, $EA_EstimatedAge_kyrs, $AA_EstimatedAge_kyrs) = split(/\s/, $line);
+					
+				next if ($echr ne $chr or $epos ne $pos);
+				foreach my $allele (split(";", $alleles))
+				{
+					my ($ref, $alt) = $allele =~ /(.+)\>(.+)/;
+					if ($ref eq $x->{REF} and $alt eq $x->{ALT}->[0])
+					{
+						my ($alt_count, $ref_count) = $allAlleleCount =~ /(\d+).+?(\d+)/;
+						my $alt_percent = sprintf("%.3f", $alt_count/($alt_count+$ref_count)*100);
+						$evss{$alt_percent} = 1;					
+					}
+				}
+			}		
+		}
+	}
+
 	foreach my $s (@samples) 
 	{
-		my ($ad_ref, $ad_alt) = split(",", $x->{gtypes}{$s}{AD});
-		$ad_alt = $ad_ref if (!defined $ad_alt);
+		next if ($rem_samples{$s});
+		next if ($s eq "715R3"); # 715 is actually HD ALL patient happened to be sequenced with Maria's cohort
+		
+		my ($ad_leu_ref, $ad_leu_alt) = split(",", $x->{gtypes}{$s}{AD});
+		$ad_leu_alt = $ad_leu_ref if (!defined $ad_leu_alt);
 
-		next if ($rem_samples{$s} || $ad_alt < 6);
+		# check matched remission
+		my ($rs) = $s =~ /(.*)(D|R\d?)$/;
+		$rs .= "C";
+		die "ERROR: Matched remission sample $rs not found\n" if (!defined $x->{gtypes}{$rs}{AD}); 
+		my ($ad_rem_ref, $ad_rem_alt) = split(",", $x->{gtypes}{$rs}{AD});
+		$ad_rem_alt = $ad_rem_ref if (!defined $ad_rem_alt);
 
-		print "$s\t".$x->{CHROM}."\t".$x->{POS}."\t".$x->{ID}."\t".$x->{REF}."\t".$x->{ALT}->[0]."\t$gene\t$impact\t$effect\t$ad_ref\t$ad_alt\t".($ad_alt/($ad_ref+$ad_alt))."\n"	
+		next if ($ad_leu_alt < 6 || $ad_rem_alt > 0);
+
+		print "$s\t$chr\t$pos\t".$x->{ID}."\t".$x->{REF}."\t".$x->{ALT}->[0]."\t$gene\t$impact\t$effect\t$non_silent\t$ad_rem_ref\t$ad_rem_alt\t$ad_leu_ref\t$ad_leu_alt\t".($ad_leu_alt/($ad_leu_ref+$ad_leu_alt))."\t".join(";", keys(%evss))."\n"	
 	}
 }
 

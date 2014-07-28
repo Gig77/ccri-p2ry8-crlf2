@@ -66,6 +66,8 @@ while (my $line = $vcf->next_line())
 	my ($num_tum, $num_rem, $max_alt_rem, $max_alt_tum) = (0, 0, 0, 0);
 	foreach my $s (@samples) 
 	{
+		next if ($s eq "715R3"); # 715 is actually HD ALL patient happened to be sequenced with Maria's cohort
+		
 		my $gt = $x->{gtypes}{$s}{GT};
 		my ($ad_ref, $ad_alt) = split(",", $x->{gtypes}{$s}{AD});
 		$ad_alt = $ad_ref if (!defined $ad_alt);
@@ -77,12 +79,19 @@ while (my $line = $vcf->next_line())
 		}
 		else
 		{
-			$num_tum ++ if ($ad_alt >= 6);
+			# check matched remission
+			my ($rs) = $s =~ /(.*)(D|R\d?)$/;
+			$rs .= "C";
+			die "ERROR: Matched remission sample $rs not found\n" if (!defined $x->{gtypes}{$rs}{AD}); 
+			my ($ad_ref_rem, $ad_alt_rem) = split(",", $x->{gtypes}{$rs}{AD});
+			$ad_alt_rem = $ad_ref_rem if (!defined $ad_alt_rem);
+			
+			$num_tum ++ if ($ad_alt >= 6 and $ad_alt_rem == 0); # present in tumor but not matched remission
 			$max_alt_tum = max($max_alt_tum, $ad_alt); 
 		}
 	}
 
-	next if ($num_rem > 0 or $num_tum < 1);
+	next if ($num_tum == 0 or $num_rem > 1);
 
 	print "$line";
 }

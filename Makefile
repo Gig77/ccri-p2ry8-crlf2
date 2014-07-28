@@ -334,7 +334,8 @@ pindel/allsamples_D pindel/allsamples_SI: pindel/pindel.cfg ~/tools/pindel-0.2.4
 		--minimum_support_for_event 10 \
 		--number_of_threads 20
 
-pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D pindel/allsamples_SI
+pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D pindel/allsamples_SI ~/p2ry8-crlf2/scripts/filter-pindel.pl
+	rm -f pindel/allsamples_D.vcf pindel/allsamples_SI.vcf
 	~/tools/pindel-0.2.4w/pindel2vcf -p pindel/allsamples_D -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v pindel/allsamples_D.vcf
 	~/tools/pindel-0.2.4w/pindel2vcf -p pindel/allsamples_SI -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v pindel/allsamples_SI.vcf 
 	~/tools/vcftools_0.1.10/bin/vcf-concat \
@@ -363,5 +364,8 @@ pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf: pindel/allsamples.c
 	mv $@.part $@
 
 pindel/allsamples.pindel.tsv: pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf ~/p2ry8-crlf2/scripts/pindel-vcf-to-tsv.pl
-	perl ~/p2ry8-crlf2/scripts/pindel-vcf-to-tsv.pl --vcf-in $< > $@.part
+	perl ~/p2ry8-crlf2/scripts/pindel-vcf-to-tsv.pl \
+		--vcf-in $< \
+		--evs-file ~/generic/data/evs/ESP6500SI-V2-SSA137.updatedRsIds.chrAll.snps_indels.txt.gz \
+		> $@.part
 	mv $@.part $@ 
