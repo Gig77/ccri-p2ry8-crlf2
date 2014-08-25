@@ -139,7 +139,7 @@ while (my $line = $vcf->next_line())
 
 		next if ($ad_leu_alt < 6 || $ad_rem_alt > 0);
 
-		print "$s\t$chr\t$pos\t".$x->{ID}."\t".$x->{REF}."\t".$x->{ALT}->[0]."\t$gene\t$impact\t$effect\t$non_silent\t$ad_rem_ref\t$ad_rem_alt\t$ad_leu_ref\t$ad_leu_alt\t".($ad_leu_alt/($ad_leu_ref+$ad_leu_alt))."\t".join(";", keys(%evss))."\n"	
+		print "$s\t".$x->{CHROM}."\t$pos\t".$x->{ID}."\t".$x->{REF}."\t".$x->{ALT}->[0]."\t$gene\t$impact\t$effect\t$non_silent\t$ad_rem_ref\t$ad_rem_alt\t$ad_leu_ref\t$ad_leu_alt\t".($ad_leu_alt/($ad_leu_ref+$ad_leu_alt))."\t".join(";", keys(%evss))."\n"	
 	}
 }
 

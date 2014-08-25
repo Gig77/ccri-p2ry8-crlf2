@@ -91,6 +91,8 @@ while (my $line = $vcf->next_line())
 		}
 	}
 
+	#print "$num_tum\t$num_rem\t$max_alt_tum\t$max_alt_rem\n" if ($num_tum > 0);
+	
 	next if ($num_tum == 0 or $num_rem > 1);
 
 	print "$line";

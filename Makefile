@@ -334,14 +334,17 @@ pindel/allsamples_D pindel/allsamples_SI: pindel/pindel.cfg ~/tools/pindel-0.2.4
 		--minimum_support_for_event 10 \
 		--number_of_threads 20
 
-pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D pindel/allsamples_SI ~/p2ry8-crlf2/scripts/filter-pindel.pl
-	rm -f pindel/allsamples_D.vcf pindel/allsamples_SI.vcf
-	~/tools/pindel-0.2.4w/pindel2vcf -p pindel/allsamples_D -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v pindel/allsamples_D.vcf
-	~/tools/pindel-0.2.4w/pindel2vcf -p pindel/allsamples_SI -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v pindel/allsamples_SI.vcf 
+pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D.vcf pindel/allsamples_SI.vcf pindel/allsamples_LI.vcf pindel/allsamples_TD.vcf ~/p2ry8-crlf2/scripts/filter-pindel.pl
 	~/tools/vcftools_0.1.10/bin/vcf-concat \
 		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_D.vcf) \
 		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_SI.vcf) \
+		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_LI.vcf) \
+		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_TD.vcf) \
 		| ~/tools/vcftools_0.1.10/bin/vcf-sort > $@.part
+	mv $@.part $@
+	
+pindel/%.vcf: pindel/%
+	~/tools/pindel-0.2.4w/pindel2vcf -p $< -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v $@.part
 	mv $@.part $@
 
 pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
