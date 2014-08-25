@@ -56,10 +56,10 @@ remission-variants/%.remission-variants.indel.tsv: ~/p2ry8-crlf2/data/mutect_som
 #-----------	
 # SNPEFF
 #-----------	
-snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/%_calls.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
+snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/%_calls.vcf ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf
 	PWD=$(pwd)
 	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
-		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
+		-v ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf \
 		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
 	test -s $@.part
@@ -68,7 +68,7 @@ snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/%_calls.vcf
 snpeff/%.indel.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_indels_hg19/%_indel.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
 	PWD=$(pwd)
 	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
-		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
+		-v ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf \
 		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
 	test -s $@.part
@@ -347,10 +347,10 @@ pindel/%.vcf: pindel/%
 	~/tools/pindel-0.2.4w/pindel2vcf -p $< -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v $@.part
 	mv $@.part $@
 
-pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
+pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf
 	PWD=$(pwd)
 	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
-		-v ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf \
+		-v ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf \
 		<(cat ~/p2ry8-crlf2/results/$< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
 	test -s $@.part
