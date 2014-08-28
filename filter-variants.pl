@@ -4,20 +4,20 @@ use strict;
 use lib "$ENV{HOME}/generic/scripts";
 use Generic;
 use Log::Log4perl qw(:easy);
+use List::Util qw(min max);
 use Vcf;
 use Data::Dumper;
 use Getopt::Long;
 use Tabix;
 use Carp;
 
-my ($vcf_out, $header, $rejected_variants_file, $sample_identifier, $vcf_in, $var_type, $min_num_rem);
+my ($vcf_out, $header, $rejected_variants_file, $sample_identifier, $vcf_in, $min_num_rem);
 my ($rmsk_file, $simplerepeat_file, $blacklist_file, $segdup_file, $g1k_accessible_file, $ucsc_retro_file, $remission_variants_file, $evs_file);
 GetOptions
 (
 	"sample=s" => \$sample_identifier, # e.g. 314_rem_dia
 	"vcf-in=s" => \$vcf_in,  # VCF input file
 	"vcf-out=s" => \$vcf_out,  # filtered VCF output file
-	"variant-type=s" => \$var_type,  # 'snp' or 'indel'
 	"header" => \$header,  # if set, write header line to output
 	"rmsk-file=s" => \$rmsk_file, # TABIX indexed UCSC table rmsk
 	"simpleRepeat-file=s" => \$simplerepeat_file, # TABIX indexed UCSC table rmsk
@@ -50,6 +50,7 @@ if ($header)
 	print "add_genes\t";
 	print "impact\t";
 	print "effect\t";
+#	print "effect_snpeff\t";
 	print "non_silent\t";
 	print "deleterious\t";
 	print "exons\t";
@@ -75,7 +76,8 @@ if ($header)
 	print "g1k-accessible\t";	
 	print "retro\t";
 	print "rem_samples\t";	
-	print "evs_variant\n";	
+	print "evs_variant\t";
+	print "AF_ESP6500\n";	
 	exit;
 }
 
@@ -83,8 +85,6 @@ my $debug = 1;
 
 croak "ERROR: --sample not specified" if (!$sample_identifier);
 croak "ERROR: --vcf-in not specified" if (!$vcf_in);
-croak "ERROR: --variant-type not specified ('snp' or 'indel')" if (!$var_type);
-croak "ERROR: invalid variant type: $var_type\n" if ($var_type ne 'snp' and $var_type ne 'indel');
 croak "ERROR: --rmsk-file not specified" if (!$rmsk_file);
 croak "ERROR: --simpleRepeat-file not specified" if (!$simplerepeat_file);
 croak "ERROR: --blacklist-file not specified" if (!$blacklist_file);
@@ -94,98 +94,72 @@ croak "ERROR: --ucscRetro not specified" if (!$ucsc_retro_file);
 croak "ERROR: --remission-variants-file not specified" if (!$remission_variants_file);
 croak "ERROR: --evs-file not specified" if (!$evs_file);
 
-my ($patient, $rem_sample, $cmp_sample) = split("_", $sample_identifier) or croak "ERROR: could not parse sample identifier\n";
-my $cmp_type = $rem_sample."_".$cmp_sample;
-die "ERROR: invalid comparison type: $cmp_type\n" if ($cmp_type ne 'rem_dia' and $cmp_type ne 'rem_rel' and $cmp_type ne 'rem_rel1' and $cmp_type ne 'rem_rel2' and $cmp_type ne 'rem_rel3');
+#-----------------------------------------------------------------------
+# deduce VCF sample IDs from sample identifier provided by command line
+#-----------------------------------------------------------------------
 
 my %patient2sample = (
-	'839_rem' => '839C',
-	'839_dia' => '839D',
-	'839_rel' => '839R',
-	'92_rem' => '92C',
-	'92_dia' => '92D',
-	'92_rel' => '92R',
-	'B36_rem' => 'B36C',
-	'B36_dia' => 'B36D',
-	'B36_rel' => 'B36R',
-	'BB16_rem' => 'BB16C',
-	'BB16_dia' => 'BB16D',
-	'BB16_rel' => 'BB16R',
-	'GI13_rem' => 'GI13C',
-	'GI13_dia' => 'GI13D',
-	'GI13_rel' => 'GI13R',
-	'HV57_rem' => 'HV57C',
-	'HV57_dia' => 'HV57D',
-	'HV57_rel' => 'HV57R',
-	'HV80_rem' => 'HV80C',
-	'HV80_dia' => 'HV80D',
-	'HV80_rel' => 'HV80R',
-	'LU3_rem' => 'LU3C',
-	'LU3_dia' => 'LU3D',
-	'LU3_rel' => 'LU3R',
-	'N7_rem' => 'N7C',
-	'N7_dia' => 'N7D',
-	'N7_rel' => 'N7R',
-	'S23_rem' => 'S23C',
-	'S23_dia' => 'S23D',
-	'S23_rel' => 'S23R',
-	'SN18_rem' => 'SN18C',
-	'SN18_dia' => 'SN18D',
-	'SN18_rel' => 'SN18R',
-	'242_rem' => '242C',
-	'242_dia' => '242D',
-	'360_rem' => '360C',
-	'360_dia' => '360D',
-	'365_rem' => '365C',
-	'365_dia' => '365D',
-	'379_rem' => '379C',
-	'379_dia' => '379D',
-	'400_rem' => '400C',
-	'400_dia' => '400D',
-	'506_rem' => '506C',
-	'506_dia' => '506D',
-	'769_rem' => '769C',
-	'769_dia' => '769D',
-	'833_rem' => '833C',
-	'833_dia' => '833D',
-	'948_rem' => '948C',
-	'948_dia' => '948D',
-	'737_rem' => '737C',
-	'737_dia' => '737D',
-	'737_rel' => '737R',
-	'737_rel2' => '737R2',
-	'715_rel3' => '715R3',
-	'108_rem' => '108C',
-	'108_dia' => '108D',
-	'108_rel' => '108R1',
-	'108_rel2' => '108R2'
+	'108_rem' => '108C',					'108_dia' => '108D',					'108_rel' => '108R1',	'108_rel2' => '108R2',
+	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',	'737_rel2' => '737R2',
+
+	'92_rem' => '92C',						'92_dia' => '92D',						'92_rel' => '92R',
+	'839_rem' => '839C',					'839_dia' => '839D',					'839_rel' => '839R',
+	'B36_rem' => 'B36C',					'B36_dia' => 'B36D',					'B36_rel' => 'B36R',
+	'BB16_rem' => 'BB16C',					'BB16_dia' => 'BB16D',					'BB16_rel' => 'BB16R',
+	'GI13_rem' => 'GI13C',					'GI13_dia' => 'GI13D',					'GI13_rel' => 'GI13R',
+	'HV57_rem' => 'HV57C',					'HV57_dia' => 'HV57D',					'HV57_rel' => 'HV57R',
+	'HV80_rem' => 'HV80C',					'HV80_dia' => 'HV80D',					'HV80_rel' => 'HV80R',
+	'LU3_rem' => 'LU3C',					'LU3_dia' => 'LU3D',					'LU3_rel' => 'LU3R',
+	'N7_rem' => 'N7C',						'N7_dia' => 'N7D',						'N7_rel' => 'N7R',
+	'S23_rem' => 'S23C',					'S23_dia' => 'S23D',					'S23_rel' => 'S23R',
+	'SN18_rem' => 'SN18C',					'SN18_dia' => 'SN18D',					'SN18_rel' => 'SN18R',
+
+	'242_rem' => '242C',					'242_dia' => '242D',
+	'360_rem' => '360C',					'360_dia' => '360D',
+	'365_rem' => '365C',					'365_dia' => '365D',
+	'379_rem' => '379C',					'379_dia' => '379D',
+	'400_rem' => '400C',					'400_dia' => '400D',
+	'506_rem' => '506C',					'506_dia' => '506D',
+	'769_rem' => '769C',					'769_dia' => '769D',
+	'833_rem' => '833C',					'833_dia' => '833D',
+	'948_rem' => '948C',					'948_dia' => '948D',
+	'802_rem' => '802_Remission',			'802_dia' => '802_Diagnosis',
+	'887_rem' => '887_Remission',			'887_dia' => '887_Diagnosis',
+	'903_rem' => '903_Remission',			'903_dia' => '903_Diagnosis',
+	'957_rem' => '957_Remission',			'957_dia' => '957_Diagnosis',
+	'961_rem' => '961_Remission',			'961_dia' => '961_Diagnosis',
+	'1060_rem' => '1060_Remission',			'1060_dia' => '1060_Diagnosis',
+	'1066_rem' => '1066_Remission',			'1066_dia' => '1066_Diagnosis',
+	'1089_rem' => '1089_Remission',			'1089_dia' => '1089_Diagnosis',
+	'BJ17183_rem' => 'BJ17183_Remission',	'BJ17183_dia' => 'BJ17183_Diagnosis',
+	'DL2_rem' => 'DL2_Remission',			'DL2_dia' => 'DL2_Diagnosis',
+	'DS10898_rem' => 'DS10898_Remission',	'DS10898_dia' => 'DS10898_Diagnosis',
+	'GI8_rem' => 'GI8_Remission',			'GI8_dia' => 'GI8_Diagnosis',
+	'HW11537_rem' => 'HW11537_Remission',	'HW11537_dia' => 'HW11537_Diagnosis',
+	'KE17247_rem' => 'KE17247_Remission',	'KE17247_dia' => 'KE17247_Diagnosis',
+	'KT14158_rem' => 'KT14158_Remission',	'KT14158_dia' => 'KT14158_Diagnosis',
+	'MA5_rem' => 'MA5_Remission',			'MA5_dia' => 'MA5_Diagnosis',
+	'SE15285_rem' => 'SE1528_5_Remission',	'SE15285_dia' => 'SE15285_Diagnosis',
+	'TL14516_rem' => 'TL14516_Remission',	'TL14516_dia' => 'TL14516_Diagnosis',
+	'VS14645_rem' => 'VS14645_Remission',	'VS14645_dia' => 'VS14645_Diagnosis'
 );
 
-# read kgXref, knownCanonical to determine UCSC canonical transcripts affected by variant
-my %kgID2refSeq;
-open(G,"$ENV{HOME}/generic/data/hg19/hg19.kgXref.txt") or die "could not open file $ENV{HOME}/generic/data/hg19/hg19.kgXref.txt";
-while(<G>)
-{
-	chomp;
-	my ($kgID, $mRNA, $spID, $spDisplayID, $geneSymbol, $refSeq, $protAcc, $description, $rfamAcc, $tRnaName) = split(/\t/);
+my ($patient, $vcf_sample_id_rem, $vcf_sample_id_tum) = split("_", $sample_identifier) or croak "ERROR: could not parse sample identifier\n";
+my $cmp_type = $vcf_sample_id_rem."_".$vcf_sample_id_tum;
+die "ERROR: invalid comparison type: $cmp_type\n" if ($cmp_type ne 'rem_dia' and $cmp_type ne 'rem_rel' and $cmp_type ne 'rem_rel1' and $cmp_type ne 'rem_rel2' and $cmp_type ne 'rem_rel3');
 
-	$kgID2refSeq{$kgID} = $refSeq if ($refSeq);
-}
-close(G);
-INFO(scalar(keys(%kgID2refSeq))." gene descriptions read from file $ENV{HOME}/generic/data/hg19/hg19.kgXref.txt");
+$vcf_sample_id_rem = $patient2sample{$patient."_$vcf_sample_id_rem"}; 
+$vcf_sample_id_tum = $patient2sample{$patient."_$vcf_sample_id_tum"}; 
 
-my %canonical;
-open(G,"$ENV{HOME}/generic/data/hg19/hg19.knownCanonical.txt") or die "could not open file $ENV{HOME}/generic/data/hg19/hg19.knownCanonical.txt";
-<G>; # skip header
-while(<G>)
-{
-	chomp;
-	my ($chrom, $chromStart, $chromEnd, $clusterId, $transcript, $protein) = split(/\t/);
-	
-	$canonical{$kgID2refSeq{$transcript}} = 1 if ($kgID2refSeq{$transcript});
-}
-close(G);
-INFO(scalar(keys(%canonical))." canonical genes read from file $ENV{HOME}/generic/data/hg19/hg19.knownCanonical.txt");
+die "ERROR: Could not deduce normal VCF sample ID from provided sample identifier $sample_identifier\n" if (!$vcf_sample_id_rem);
+die "ERROR: Could not deduce tumor VCF sample ID from provided sample identifier $sample_identifier\n" if (!$vcf_sample_id_tum);
+
+print STDERR "Normal VCF sample ID: $vcf_sample_id_rem\n";
+print STDERR "Tumor VCF sample ID: $vcf_sample_id_tum\n";
+
+#-------------------------
+# read in auxiliary files 
+#-------------------------
 
 my %rejected_variants;
 if ($rejected_variants_file)
@@ -211,6 +185,10 @@ my $ucscRetro = Tabix->new(-data => $ucsc_retro_file);
 my $remission = Tabix->new(-data => $remission_variants_file);
 my $evs = Tabix->new(-data => $evs_file);
 
+#-----------
+# parse VCF 
+#-----------
+
 $| = 1; # turn on autoflush
 
 my %variant_stati = 
@@ -228,34 +206,12 @@ INFO("Processing file $vcf_in...");
 my $vcf = Vcf->new(file => "$vcf_in");
 $vcf->parse_header();
 
-my $mutect = $vcf->get_header_line(key => 'GATKCommandLine', ID => 'MuTect')->[0]->{'CommandLineOptions'};
-$mutect = $vcf->get_header_line(key => 'MuTect')->[0]->[0]->{'value'} if (!$mutect);
-if ($mutect)
-{
-	($rem_sample) = $mutect =~ / normal_sample_name=(\S+)/;
-	($cmp_sample) = $mutect =~ / tumor_sample_name=(\S+)/;
-}
-
 my (@samples) = $vcf->get_samples();
 
-if ($samples[0] =~ /715_Relapse_2/ or $samples[1] =~ /715_Relapse_2/) { $cmp_sample = "715_Relapse_2"; }
-
-if ($rem_sample ne $samples[0] and $rem_sample ne $samples[1])
-{
-	$rem_sample = $patient2sample{$patient."_$rem_sample"} ? $patient2sample{$patient."_$rem_sample"} : $patient."_$rem_sample"; 
-}
-if ($cmp_sample ne $samples[0] and $cmp_sample ne $samples[1])
-{
-	$cmp_sample = $patient2sample{$patient."_$cmp_sample"} ? $patient2sample{$patient."_$cmp_sample"} : $patient."_$cmp_sample"; 
-}
-
-print STDERR "Normal sample name: $rem_sample\n";
-print STDERR "Tumor sample name: $cmp_sample\n";
-
 # sanity checks
-die "ERROR: Sample name $rem_sample not found!\n" if ($rem_sample ne $samples[0] and $rem_sample ne $samples[1]);
-die "ERROR: Sample name $cmp_sample not found!\n" if ($cmp_sample ne $samples[0] and $cmp_sample ne $samples[1]);
-die "ERROR: Sample names identical: $cmp_sample!\n" if ($cmp_sample eq $rem_sample);
+die "ERROR: Sample name $vcf_sample_id_rem not found!\n" if ($vcf_sample_id_rem ne $samples[0] and $vcf_sample_id_rem ne $samples[1]);
+die "ERROR: Sample name $vcf_sample_id_tum not found!\n" if ($vcf_sample_id_tum ne $samples[0] and $vcf_sample_id_tum ne $samples[1]);
+die "ERROR: Sample names identical: $vcf_sample_id_tum!\n" if ($vcf_sample_id_tum eq $vcf_sample_id_rem);
 
 if ($vcf_out) 
 {
@@ -276,14 +232,14 @@ while (my $line = $vcf->next_line())
 	$tot_var ++;
 	$qual_num{$x->{FILTER}->[0]} = $qual_num{$x->{FILTER}->[0]} ? $qual_num{$x->{FILTER}->[0]} + 1 : 1;
 	
-	if ($x->{gtypes}{$rem_sample}{GT} eq $x->{gtypes}{$cmp_sample}{GT}) # no difference in genotype?
+	if ($x->{gtypes}{$vcf_sample_id_rem}{GT} eq $x->{gtypes}{$vcf_sample_id_tum}{GT}) # no difference in genotype?
 	{
 		$filtered_gt ++;
 		next;
 	}
 	
-	my $gt_rem = $x->{gtypes}{$rem_sample}{GT};
-	die "ERROR: Could not determine genotype of sample $rem_sample in file $vcf_in\n" if (!defined $gt_rem or $gt_rem eq "");
+	my $gt_rem = $x->{gtypes}{$vcf_sample_id_rem}{GT};
+	die "ERROR: Could not determine genotype of sample $vcf_sample_id_rem in file $vcf_in\n" if (!defined $gt_rem or $gt_rem eq "");
 
 	if ($gt_rem =~ /1/) # germline variant?
 	{
@@ -313,23 +269,28 @@ while (my $line = $vcf->next_line())
 #	print Dumper($x);
 #	exit;		
 	
-	if ($var_type eq 'snp')
+	my $var_type;
+	if (length($x->{REF}) == length($x->{ALT}->[0]))
 	{
+		$var_type = "snp";
+		
 		##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
-		($ad_tum_ref, $ad_tum_alt) = split(",", $x->{gtypes}{$cmp_sample}{AD});
-		($ad_rem_ref, $ad_rem_alt) = split(",", $x->{gtypes}{$rem_sample}{AD});
+		($ad_tum_ref, $ad_tum_alt) = split(",", $x->{gtypes}{$vcf_sample_id_tum}{AD});
+		($ad_rem_ref, $ad_rem_alt) = split(",", $x->{gtypes}{$vcf_sample_id_rem}{AD});
 		
 		##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Approximate read depth (reads with MQ=255 or with bad mates are filtered)">
-		($dp_tum, $dp_rem) = ($x->{gtypes}{$cmp_sample}{DP}, $x->{gtypes}{$rem_sample}{DP});
+		($dp_tum, $dp_rem) = ($x->{gtypes}{$vcf_sample_id_tum}{DP}, $x->{gtypes}{$vcf_sample_id_rem}{DP});
 
 		##FORMAT=<ID=FA,Number=A,Type=Float,Description="Allele fraction of the alternate allele with regard to reference">
-		$freq_tum = $x->{gtypes}{$cmp_sample}{FA};
-		$freq_rem = $x->{gtypes}{$rem_sample}{FA};
+		$freq_tum = $x->{gtypes}{$vcf_sample_id_tum}{FA};
+		$freq_rem = $x->{gtypes}{$vcf_sample_id_rem}{FA};
 		
 		#next if ($status eq "REJECT" and ($dp_tum <= 50 or $dp_rem <= 50 or $freq_tum < 0.2 or $freq_rem > 0.05));	
 	}
-	elsif ($var_type eq 'indel') # indel
+	else
 	{
+		$var_type = "indel";
+		
 		##INFO=<ID=T_DP,Number=1,Type=Integer,Description="In TUMOR: total coverage at the site">
 		##INFO=<ID=N_DP,Number=1,Type=Integer,Description="In NORMAL: total coverage at the site">
 		($dp_tum, $dp_rem) = ($x->{INFO}{T_DP}, $x->{INFO}{N_DP});
@@ -346,14 +307,14 @@ while (my $line = $vcf->next_line())
 		# insufficient read depth
 		if ($dp_tum < 10)
 		{
-			INFO("REJECT: READ DEPTH < 10: $dp_tum");
+			#INFO("REJECT: READ DEPTH < 10: $dp_tum");
 			next;			
 		}
 
 		# require high consensus call for indel
 		if ($ad_tum_alt/$ad_tum_any_indel < 0.7)
 		{
-			INFO("REJECT: BAD CONSENSUS: ",$x->{CHROM},":",$x->{POS},"");
+			#INFO("REJECT: BAD CONSENSUS: ",$x->{CHROM},":",$x->{POS},"");
 			next;
 		}		
 		
@@ -362,7 +323,7 @@ while (my $line = $vcf->next_line())
 		my ($reads_indel_fwd, $reads_indel_rev, $reads_ref_fwd, $reads_ref_rev) = split(",", $x->{INFO}{T_SC});
 		if ($reads_indel_fwd == 0 or $reads_indel_rev == 0)
 		{
-			INFO("REJECT: STRAND BIAS: ",$x->{CHROM},":",$x->{POS},"\t","reads_indel_fwd: $reads_indel_fwd\treads_indel_rev: $reads_indel_rev");
+			#INFO("REJECT: STRAND BIAS: ",$x->{CHROM},":",$x->{POS},"\t","reads_indel_fwd: $reads_indel_fwd\treads_indel_rev: $reads_indel_rev");
 			next;
 		}
 		
@@ -371,7 +332,7 @@ while (my $line = $vcf->next_line())
 		my ($frac_mm_reads_indel, $frac_mm_reads_ref) = split(",", $x->{INFO}{T_NQSMM});
 		if ($frac_mm_reads_indel - $frac_mm_reads_ref > 0.01)
 		{
-			INFO("REJECT: POOR ALIGNMENT: ",$x->{CHROM},":",$x->{POS},"\t","frac_mm_reads_indel: $frac_mm_reads_indel\tfrac_mm_reads_ref: $frac_mm_reads_ref");
+			#INFO("REJECT: POOR ALIGNMENT: ",$x->{CHROM},":",$x->{POS},"\t","frac_mm_reads_indel: $frac_mm_reads_indel\tfrac_mm_reads_ref: $frac_mm_reads_ref");
 			next;
 		}
 
@@ -382,7 +343,7 @@ while (my $line = $vcf->next_line())
 		my ($mq_indel_rem, $mq_ref_rem) = split(",", $x->{INFO}{N_MQ});		
 		if ($mq_indel_tum < 40)
 		{
-			INFO("REJECT: POOR MAPPING: ",$x->{CHROM},":",$x->{POS},"\t","T_MQ=$mq_indel_tum,$mq_ref_tum");
+			#INFO("REJECT: POOR MAPPING: ",$x->{CHROM},":",$x->{POS},"\t","T_MQ=$mq_indel_tum,$mq_ref_tum");
 			next;
 		}
 		
@@ -392,13 +353,9 @@ while (my $line = $vcf->next_line())
 #		print "reads_ref_fwd: $reads_ref_fwd\n";
 #		print "reads_ref_rev: $reads_ref_rev\n";
 	}
-	else
-	{
-		croak "ERROR: Invalid variant type: $var_type\n";
-	}
 
 	my (@repeats, @dups, @blacklist, @retro, @rem_samples, %evss);
-	my ($chr, $pos) = ($x->{CHROM}, $x->{POS});
+	my ($chr, $pos) = ("chr".$x->{CHROM}, $x->{POS});
 
 	# ----- annotate overlapping repeat regions
 	{
@@ -485,7 +442,7 @@ while (my $line = $vcf->next_line())
 
 	# ----- annotate variants found in remission samples
 	{
-		my $iter = $remission->query($chr, $pos-1, $pos);
+		my $iter = $remission->query($x->{CHROM}, $pos-1, $pos);
 		if ($iter and $iter->{_})
 		{
 			while (my $line = $remission->read($iter)) 
@@ -528,6 +485,23 @@ while (my $line = $vcf->next_line())
 		$num_evs ++ if (keys(%evss) > 0);
 	}
 	
+	# ----- G1K frequency
+	my $g1k_max_freq = 0;
+	foreach my $f ($x->{INFO}{'dbNSFP_1000Gp1_AF'}, $x->{INFO}{'dbNSFP_1000Gp1_AFR_AF'}, $x->{INFO}{'dbNSFP_1000Gp1_EUR_AF'}, $x->{INFO}{'dbNSFP_1000Gp1_AMR_AF'}, $x->{INFO}{'dbNSFP_1000Gp1_ASN_AF'})
+	{
+		$g1k_max_freq = $f if (defined $f and $g1k_max_freq < $f);
+	}
+	
+	# ----- ESP6500 frequency
+	my $evs_freq = (defined $x->{INFO}{dbNSFP_ESP6500_AA_AF} and defined $x->{INFO}{dbNSFP_ESP6500_EA_AF}) 
+					? max($x->{INFO}{dbNSFP_ESP6500_AA_AF}, $x->{INFO}{dbNSFP_ESP6500_EA_AF}) 
+					: defined $x->{INFO}{dbNSFP_ESP6500_AA_AF} 
+						? $x->{INFO}{dbNSFP_ESP6500_AA_AF} 
+						: defined $x->{INFO}{dbNSFP_ESP6500_EA_AF} 
+							? $x->{INFO}{dbNSFP_ESP6500_EA_AF} 
+							: 0;
+	$num_evs ++ if ($evs_freq > 0);
+	
 	my @rejected_because;
 	if ($rejected_variants{"$patient\t$cmp_type\t".$x->{CHROM}."\t".$x->{POS}}) { push(@rejected_because, "manual inspection (".$rejected_variants{"$patient\t$cmp_type\t".$x->{CHROM}."\t".$x->{POS}}.")")}
 	if (@repeats > 0) { push(@rejected_because, "repetitive region"); }
@@ -536,16 +510,25 @@ while (my $line = $vcf->next_line())
 	#if (@retro > 0) { push(@rejected_because, "retrotransposon"); }
 	if (@rem_samples >= $min_num_rem) { push(@rejected_because, "present remissions"); }
 	if ($x->{ID} and $x->{ID} ne ".")  { push(@rejected_because, "dbSNP"); }  
-	if (defined $x->{INFO}{'dbNSFP_1000Gp1_AF'} and $x->{INFO}{'dbNSFP_1000Gp1_AF'} > 0) { push(@rejected_because, "g1k"); }
+	if ($g1k_max_freq > 0.01) { push(@rejected_because, "G1K"); }
+	if ($evs_freq > 0.01) { push(@rejected_because, "ESP6500"); }
 	if ($x->{CHROM} eq "hs37d5") { push(@rejected_because, "decoy genome"); }
 	
 	$line =~ s/^([^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t)[^\t]+/$1REJECT/ if (@rejected_because > 0);
 	$line =~ s/^([^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t)[^\t]+/$1MISSED/ if ($status eq "MISSED");
 	
 	my $polyphen = $x->{INFO}{'dbNSFP_Polyphen2_HVAR_pred'};
-	my $sift = $x->{INFO}{'dbNSFP_SIFT_score'};
-	my $siphy = $x->{INFO}{'dbNSFP_29way_logOdds'};
-	my ($gene, $add_genes, $impact, $effect, $affected_exon, $aa_change) = get_impact($x->{INFO}{EFF});
+	my $sift = undef;
+	if (defined $x->{INFO}{'dbNSFP_SIFT_score'})
+	{
+		foreach my $s (split(",", $x->{INFO}{'dbNSFP_SIFT_score'}))
+		{
+			next if (!defined $s or $s eq ".");
+			$sift = $s if (!defined $sift or $s < $sift);	
+		}
+	} 
+	my $siphy = $x->{INFO}{'dbNSFP_SiPhy_29way_logOdds'};
+	my ($gene, $add_genes, $impact, $effect, $aa_change) = get_impact($x->{INFO}{EFF});
 	
 	my $is_deleterious = "n/d";
 	$is_deleterious = "yes" if ($effect eq "NON_SYNONYMOUS_CODING" and $polyphen and $polyphen =~ /D/ and defined $sift and $sift < 0.05); # polyphen & sift
@@ -574,12 +557,15 @@ while (my $line = $vcf->next_line())
 	print "$gene\t";
 	print "$add_genes\t";
 	print "$impact\t";
+#	print $x->{INFO}{SNPEFF_FUNCTIONAL_CLASS} ? $x->{INFO}{SNPEFF_FUNCTIONAL_CLASS} : "", "\t"; 
+#	print $x->{INFO}{SNPEFF_IMPACT} ? $x->{INFO}{SNPEFF_IMPACT} : "", "\t"; 
 	print "$effect\t";
+#	print $x->{INFO}{SNPEFF_EFFECT} ? $x->{INFO}{SNPEFF_EFFECT} : "", "\t"; 
 	print "$non_silent\t";
 	print "$is_deleterious\t";
-	print "$affected_exon\t";
+	print $x->{INFO}{SNPEFF_EXON_ID} ? $x->{INFO}{SNPEFF_EXON_ID} : "", "\t"; 
 #	print join(",", @{$x->{FILTER}}),"\t";
-#	print exists $x->{gtypes}{$cmp_sample}{SS} ? $variant_stati{$x->{gtypes}{$cmp_sample}{SS}} : "n/a", "\t";
+#	print exists $x->{gtypes}{$vcf_sample_id_tum}{SS} ? $variant_stati{$x->{gtypes}{$vcf_sample_id_tum}{SS}} : "n/a", "\t";
 	print "$dp_rem\t";
 	print "$ad_rem_ref\t";
 	print "$ad_rem_alt\t";
@@ -605,8 +591,9 @@ while (my $line = $vcf->next_line())
 	{
 		print "\t";
 	}
-	print defined $x->{INFO}{'dbNSFP_1000Gp1_AF'} ? $x->{INFO}{'dbNSFP_1000Gp1_AF'} : "";  # Alternative allele frequency in the whole 1000Gp1 data
+	print $g1k_max_freq > 0 ? $g1k_max_freq : "";  # alternative allele frequency in the whole 1000Gp1 data
 	print "\t", join(',', @repeats), "\t", join(',', @dups), "\t", join(',', @blacklist), "\t$accessible\t", join(",", @retro), "\t", join(",", @rem_samples), "\t", join(";", keys(%evss));
+	print "\t", $evs_freq > 0 ? $evs_freq : ""; 
 	print "\n";
 		
 #	print "\n"; print Dumper($x); exit;
@@ -642,7 +629,7 @@ sub get_impact
 	my $effs = shift or die "ERROR: effect not specified";
 
 	# determine all genes impacted by variants
-	my (%genes_by_impact, %all_genes, $combined_effect, $combined_impact, %affected_exons, %aa_changes);
+	my (%genes_by_impact, %all_genes, $combined_effect, $combined_impact, %aa_changes);
 	foreach my $eff (split(",", $effs))
 	{
 		my ($effect, $rest) = $eff =~ /([^\(]+)\(([^\)]+)\)/
@@ -658,11 +645,6 @@ sub get_impact
 		{
 			$transcript =~ s/\.\d+$//; # remove version number from accession
 			$transcript =~ s/\.\d+$//; 
-			$affected_exons{$gene_name}{$exon}{$transcript} = 1;
-			if ($canonical{$transcript})
-			{
-				$affected_exons{$gene_name}{'canonical'}{$exon}{$transcript} = 1;
-			}
 		}
 			
 		# gene impacted by variant?
@@ -714,64 +696,6 @@ sub get_impact
 		delete $all_genes{$gene};
 		$add_genes = join(",", keys(%all_genes));
 	}
-#		# determine overall impact
-#		if ($combined_impact eq "n/d" or $combined_impact eq "MODIFIER")
-#		{
-#			$gene = $gene_name;
-#			$combined_impact = $impact;
-#			$combined_effect = $effect;
-#		}
-#		elsif ($combined_impact eq "LOW" and $impact =~ /(MODERATE|HIGH)/)
-#		{
-#			$gene = $gene_name;
-#			$combined_impact = $impact;
-#			$combined_effect = $effect;
-#		}
-#		elsif ($combined_impact eq "MODERATE" and $impact =~ /HIGH/)
-#		{
-#			$gene = $gene_name;
-#			$combined_impact = $impact;
-#			$combined_effect = $effect;
-#		}
-#		elsif ($impact eq "HIGH")
-#		{
-#			$gene = $gene_name;
-#			$combined_impact = $impact;
-#			$combined_effect = $effect;
-#		}		
 
-	my @aff_exons;
-	foreach my $g (keys(%affected_exons))
-	{
-		if (exists $affected_exons{$g}{'canonical'}) # known canonical transcript for this gene?
-		{
-			foreach my $e (keys(%{$affected_exons{$g}{'canonical'}}))
-			{
-				my @transcripts;
-				foreach my $t (keys(%{$affected_exons{$g}{'canonical'}{$e}}))
-				{
-					push(@transcripts, "$g:$t");
-				}
-				push(@aff_exons, "$e (".join(";", @transcripts).")");
-			}
-		}
-		else
-		{
-			foreach my $e (keys(%{$affected_exons{$g}}))
-			{
-				next if ($e eq 'canonical');
-
-				my @transcripts;
-				foreach my $t (keys(%{$affected_exons{$g}{$e}}))
-				{
-					push(@transcripts, "$g:$t");
-				}
-				push(@aff_exons, "$e (".join(";", @transcripts).")");
-			}
-			
-		}
-	}
-
-	return ($gene, $add_genes, $combined_impact, $combined_effect, 
-			@aff_exons > 0 ? join(",", @aff_exons) : "", join(";", keys(%aa_changes)));
+	return ($gene, $add_genes, $combined_impact, $combined_effect, join(";", keys(%aa_changes)));
 }

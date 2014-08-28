@@ -6,13 +6,14 @@ SHELL=/bin/bash  # required to make pipefail work
 LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S ", localtime), $$ARGV[0], "$@: $$_";'
 
 PATIENTS_TEST = 92
-PATIENTS_MATCHED = 108 839 92 B36 BB16 GI13 HV57 HV80 LU3 N7 S23 SN18 737
-PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 833 948
-PATIENTS_REL2 = 108 737 
-PATIENTS_REL3 = 715 
+PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
+PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 887 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
+PATIENTS_REL2 = 108 737
+PATIENTS_REL3 = 715
+EXCLUDED_FOR_NOW = 841
 
-#all: filtered-variants.cosmic.tsv filtered-variants.cosmic.normaf.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv segmented_coverage/allpatients.segmented-coverage.pdf coverage/coverage-plots-exome.png picard
+#all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
+all: fastqc filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv segmented-coverage/allpatients.segmented-coverage.pdf coverage/coverage-plots-exome.png picard
 
 #-----------
 # DOWNLOAD
@@ -31,10 +32,11 @@ all: filtered-variants.cosmic.normaf.tsv filtered-variants.cosmic.merged.tsv seg
 #-----------
 # REMISSION VARIANTS
 #-----------
-remission-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), remission-variants/$P.remission-variants.snp.tsv remission-variants/$P.remission-variants.indel.tsv) \
-					    $(foreach P, $(PATIENTS_DIA_ONLY), remission-variants/$P.remission-variants.snp.tsv remission-variants/$P.remission-variants.indel.tsv) \
+remission-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), remission-variants/$P.remission-variants.tsv) \
+					    $(foreach P, $(PATIENTS_DIA_ONLY), remission-variants/$P.remission-variants.tsv) \
 					    ~/hdall/results/remission-variants.tsv
-	cat $^ | ~/tools/lh3-sort/sort -k 2,2N -k 3,3n > remission-variants.tsv
+	cat $^ | perl -ne 's/chrM/MT/; s/\tchr/\t/; print $$_;' | ~/tools/lh3-sort/sort -k 2,2N -k 3,3n > $@.part
+	mv $@.part $@
 
 remission-variants.tsv.gz: remission-variants.tsv
 	bgzip -c $^ > $@.part
@@ -43,32 +45,19 @@ remission-variants.tsv.gz: remission-variants.tsv
 remission-variants.tsv.gz.tbi: remission-variants.tsv.gz
 	~/tools/tabix-0.2.6/tabix $^ -s 2 -b 3 -e 3
 
-remission-variants/%.remission-variants.snp.tsv: ~/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/mutect_%_rem_dia_calls.vcf ~/p2ry8-crlf2/scripts/create-normal-vcf.pl
-	cat $< | perl ~/p2ry8-crlf2/scripts/create-normal-vcf.pl \
-		2>&1 1> $@.part | $(LOG)
-	mv $@.part $@
-
-remission-variants/%.remission-variants.indel.tsv: ~/p2ry8-crlf2/data/mutect_somatic_indels_hg19/indels_%_rem_dia_indel.vcf ~/p2ry8-crlf2/scripts/create-normal-vcf.pl
-	cat $< | perl ~/p2ry8-crlf2/scripts/create-normal-vcf.pl \
+remission-variants/%.remission-variants.tsv: ~/p2ry8-crlf2/data/mutect/%_rem_dia.somatic.vcf ~/p2ry8-crlf2/scripts/create-normal-vcf.pl
+	mkdir -p remission-variants 
+	cat $< | perl ~/p2ry8-crlf2/scripts/create-normal-vcf.pl --sample-name $* \
 		2>&1 1> $@.part | $(LOG)
 	mv $@.part $@
 
 #-----------	
 # SNPEFF
 #-----------	
-snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/%_calls.vcf ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf
+snpeff/%.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect/%.vcf ~/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
-		-v ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf \
-		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
-		2>&1 1>$(PWD)/$@.part) | $(LOG)
-	test -s $@.part
-	mv $@.part $@
-
-snpeff/%.indel.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_indels_hg19/%_indel.vcf ~/tools/snpEff-3.3h/common_no_known_medical_impact_20130930.chr.vcf
-	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
-		-v ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf \
+	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar annotate \
+		-v ~/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf \
 		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
 	test -s $@.part
@@ -76,14 +65,33 @@ snpeff/%.indel.dbsnp.vcf: ~/p2ry8-crlf2/data/mutect_somatic_indels_hg19/%_indel.
 
 snpeff/%.dbsnp.snpeff.vcf: snpeff/%.dbsnp.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -Xmx2g -jar snpEff.jar -v -lof hg19 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	(cd ~/tools/snpEff-3.6; java -Xmx4g -jar snpEff.jar -v -lof GRCh37.75 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
 
-snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf
+snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf ~/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar dbnsfp -v ~/generic/data/dbNSFP-2.1/dbNSFP2.1.txt $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar dbnsfp \
+		-v ~/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz \
+		-collapse \
+		-f SIFT_pred,SIFT_score,Polyphen2_HVAR_pred,Polyphen2_HVAR_score,SiPhy_29way_logOdds,LRT_pred,LRT_score,MutationTaster_pred,MutationTaster_score,MutationAssessor_pred,MutationAssessor_score,FATHMM_pred,FATHMM_score,RadialSVM_pred,RadialSVM_score,GERP++_RS,1000Gp1_AF,1000Gp1_AFR_AF,1000Gp1_EUR_AF,1000Gp1_AMR_AF,1000Gp1_ASN_AF,ESP6500_AA_AF,ESP6500_EA_AF,Uniprot_acc,Interpro_domain, \
+		$(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
+
+#-------------
+# FASTQC
+#-------------
+
+.PHONY: fastqc
+fastqc: $(foreach P, $(PATIENTS_MATCHED), fastqc/$PC.fastqc.html fastqc/$PD.fastqc.html fastqc/$PR.fastqc.html) \
+        $(foreach P, $(PATIENTS_DIA_ONLY), fastqc/$PC.fastqc.html fastqc/$PD.fastqc.html) \
+		$(foreach P, $(PATIENTS_REL2), fastqc/$PR2.fastqc.html)
 	
+fastqc/%.fastqc.html: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
+	mkdir -p fastqc/$*.part
+	~/tools/FastQC/fastqc -o fastqc/$*.part -f bam $^
+	mv fastqc/$*.part/* fastqc
+	rmdir fastqc/$*.part
+
 #-------------
 # CNV
 #-------------
@@ -91,79 +99,82 @@ snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf
 GENES_PAR1=PPP2R3B,SHOX,CRLF2,IL3RA,P2RY8,ASMT,DHR3X,ZBED1,CD99
 GENES_IKZF1=VWC2,ZPBP,C7orf72,IKZF1,DDC,GRB10,COBL
 
-.PHONY: coverage
-coverage: coverage/allpatients.PAR1-X-60001-2699520.pdf \
-		  coverage/allpatients.IKZF1-7-49578046-51601231.pdf \
-		  coverage/allpatients.IKZF1_highres-7-50332565-50494236.pdf \
-		  coverage/allpatients.IKZF2-2-211852462-217849831.pdf \
-		  coverage/allpatients.IKZF3-17-37789665-38184756.pdf \
-		  coverage/allpatients.PAX5-9-35800105-38084658.pdf \
-		  coverage/allpatients.EBF1-5-155175854-161576670.pdf \
-		  coverage/allpatients.ETV6-12-10309186-13646908.pdf \
-		  coverage/allpatients.RUNX1-21-34971197-38263248.pdf \
-		  coverage/allpatients.VPREB1-22-21866719-24317257.pdf \
-		  coverage/allpatients.ERG-21-38349519-41562975.pdf \
-		  coverage/allpatients.TP53-17-7440139-7721205.pdf \
-		  coverage/allpatients.RB1-13-46907242-51051394.pdf \
-		  coverage/allpatients.CDKN2AandB-9-20309360-23721195.pdf \
-		  coverage/allpatients.CREBBP-16-3067833-4618486.pdf \
-		  coverage/allpatients.MLL2-12-49295653-49584389.pdf \
-		  coverage/allpatients.EZH2-7-148002918-149209618.pdf \
-		  coverage/allpatients.NCOR1-17-15245025-16768909.pdf \
-		  coverage/allpatients.TUSC3-8-12275019-19439531.pdf \
-		  coverage/allpatients.WHSC1-4-1615018-2430195.pdf \
-		  coverage/allpatients.NT5C2-10-104141780-105714035.pdf \
-		  coverage/allpatients.LEF1-4-108313628-110095704.pdf \
-		  coverage/allpatients.TCF3-19-1261454-2018719.pdf \
-		  coverage/allpatients.BLNK-10-97442705-98708695.pdf \
-		  coverage/allpatients.FOXO3A-6-108206749-109779719.pdf \
-		  coverage/allpatients.FBXW7-4-151992600-154510682.pdf \
-		  coverage/allpatients.CREG1-1-167207942-167849758.pdf \
-		  coverage/allpatients.FLT3_PAN3-13-27955721-29384162.pdf \
-		  coverage/allpatients.PDGFRB-5-149383560-149648693.pdf \
-		  coverage/allpatients.STRN3-14-30942316-31995615.pdf \
-		  coverage/allpatients.RANBP2-2-109007910-109671216.pdf \
-		  coverage/allpatients.EPOR-19-11393474-11619196.pdf \
-		  coverage/allpatients.SH2B3-12-111621200-112196224.pdf \
-		  coverage/allpatients.HIST1H2BD_HIST1H1E-6-26033646-26316674.pdf \
-		  coverage/allpatients.SPRED1-15-35957458-40803200.pdf \
-		  coverage/allpatients.ADD3-10-111062840-113085360.pdf \
-		  coverage/allpatients.ATP10A-15-24452756-27861838.pdf \
-		  coverage/allpatients.NUP214-9-133609878-134537138.pdf
+.PHONY: region-coverage
+region-coverage: region-coverage/allpatients.PAR1-X-60001-2699520.pdf \
+		  region-coverage/allpatients.IKZF1-7-49578046-51601231.pdf \
+		  region-coverage/allpatients.IKZF1_highres-7-50332565-50494236.pdf \
+		  region-coverage/allpatients.IKZF2-2-211852462-217849831.pdf \
+		  region-coverage/allpatients.IKZF3-17-37789665-38184756.pdf \
+		  region-coverage/allpatients.PAX5-9-35800105-38084658.pdf \
+		  region-coverage/allpatients.EBF1-5-155175854-161576670.pdf \
+		  region-coverage/allpatients.ETV6-12-10309186-13646908.pdf \
+		  region-coverage/allpatients.RUNX1-21-34971197-38263248.pdf \
+		  region-coverage/allpatients.VPREB1-22-21866719-24317257.pdf \
+		  region-coverage/allpatients.ERG-21-38349519-41562975.pdf \
+		  region-coverage/allpatients.TP53-17-7440139-7721205.pdf \
+		  region-coverage/allpatients.RB1-13-46907242-51051394.pdf \
+		  region-coverage/allpatients.CDKN2AandB-9-20309360-23721195.pdf \
+		  region-coverage/allpatients.CREBBP-16-3067833-4618486.pdf \
+		  region-coverage/allpatients.MLL2-12-49295653-49584389.pdf \
+		  region-coverage/allpatients.EZH2-7-148002918-149209618.pdf \
+		  region-coverage/allpatients.NCOR1-17-15245025-16768909.pdf \
+		  region-coverage/allpatients.TUSC3-8-12275019-19439531.pdf \
+		  region-coverage/allpatients.WHSC1-4-1615018-2430195.pdf \
+		  region-coverage/allpatients.NT5C2-10-104141780-105714035.pdf \
+		  region-coverage/allpatients.LEF1-4-108313628-110095704.pdf \
+		  region-coverage/allpatients.TCF3-19-1261454-2018719.pdf \
+		  region-coverage/allpatients.BLNK-10-97442705-98708695.pdf \
+		  region-coverage/allpatients.FOXO3A-6-108206749-109779719.pdf \
+		  region-coverage/allpatients.FBXW7-4-151992600-154510682.pdf \
+		  region-coverage/allpatients.CREG1-1-167207942-167849758.pdf \
+		  region-coverage/allpatients.FLT3_PAN3-13-27955721-29384162.pdf \
+		  region-coverage/allpatients.PDGFRB-5-149383560-149648693.pdf \
+		  region-coverage/allpatients.STRN3-14-30942316-31995615.pdf \
+		  region-coverage/allpatients.RANBP2-2-109007910-109671216.pdf \
+		  region-coverage/allpatients.EPOR-19-11393474-11619196.pdf \
+		  region-coverage/allpatients.SH2B3-12-111621200-112196224.pdf \
+		  region-coverage/allpatients.HIST1H2BD_HIST1H1E-6-26033646-26316674.pdf \
+		  region-coverage/allpatients.SPRED1-15-35957458-40803200.pdf \
+		  region-coverage/allpatients.ADD3-10-111062840-113085360.pdf \
+		  region-coverage/allpatients.ATP10A-15-24452756-27861838.pdf \
+		  region-coverage/allpatients.NUP214-9-133609878-134537138.pdf
 		  
 
-segmented_coverage/allpatients.segmented-coverage.pdf: $(foreach P, $(PATIENTS_MATCHED), segmented_coverage/$PD.segmented-coverage.pdf segmented_coverage/$PR.segmented-coverage.pdf) \
-								    				   $(foreach P, $(PATIENTS_DIA_ONLY), segmented_coverage/$PD.segmented-coverage.pdf)
+segmented-coverage/allpatients.segmented-coverage.pdf: $(foreach P, $(PATIENTS_MATCHED), segmented-coverage/$PD.segmented-coverage.pdf segmented-coverage/$PR.segmented-coverage.pdf) \
+								    				   $(foreach P, $(PATIENTS_DIA_ONLY), segmented-coverage/$PD.segmented-coverage.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
 
-segmented_coverage/%D.segmented-coverage.pdf: segmented_coverage/%D.segmented-coverage.tsv segmented_coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+segmented-coverage/%D.segmented-coverage.pdf: segmented-coverage/%D.segmented-coverage.tsv segmented-coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	mkdir -p segmented-coverage/circos
 	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
 		--patient $*D \
 		--tumor $(word 1,$^) \
 		--normal $(word 2,$^) \
-		--circos circos/$*D.cnv.circos.tsv \
+		--circos segmented-coverage/circos/$*D.cnv.circos.tsv \
 		--output $@.part
 	mv $@.part $@
 
-segmented_coverage/%R.segmented-coverage.pdf: segmented_coverage/%R.segmented-coverage.tsv segmented_coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+segmented-coverage/%R.segmented-coverage.pdf: segmented-coverage/%R.segmented-coverage.tsv segmented-coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	mkdir -p segmented-coverage/circos
 	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
 		--patient $*R \
 		--tumor $(word 1,$^) \
 		--normal $(word 2,$^) \
-		--circos circos/$*R.cnv.circos.tsv \
+		--circos segmented-coverage/circos/$*R.cnv.circos.tsv \
 		--output $@.part
 	mv $@.part $@
 
-#segmented_coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
-segmented_coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam
+#segmented-coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
+segmented-coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
+	mkdir -p segmented-coverage
 	~/tools/samtools-0.1.19/samtools depth -Q 1 $< \
 		| perl ~/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 	
-coverage/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
+region-coverage/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
 	~/tools/samtools-0.1.19/samtools depth \
 		-Q 1 \
 		-b /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed \
@@ -173,7 +184,7 @@ coverage/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigne
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
-coverage/patient%.pdf: coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage/$$(word 1, $$(subst ., , %))R.exon-coverage.tsv coverage/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
+region-coverage/patient%.pdf: region-coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv region-coverage/$$(word 1, $$(subst ., , %))R.exon-coverage.tsv region-coverage/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
 	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
 		--patient $(word 1, $(subst ., , $*)) \
 		--diagnosis $(word 1,$^) \
@@ -187,7 +198,7 @@ coverage/patient%.pdf: coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv 
 		$(if $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),--display-genes $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),)
 	mv $@.part $@
 
-coverage/patient%.diaonly.pdf: coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
+region-coverage/patient%.diaonly.pdf: region-coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv region-coverage/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
 	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
 		--patient $(word 1, $(subst ., , $*)) \
 		--diagnosis $(word 1,$^) \
@@ -200,29 +211,30 @@ coverage/patient%.diaonly.pdf: coverage/$$(word 1, $$(subst ., , %))D.exon-cover
 		$(if $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),--display-genes $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),)
 	mv $@.part $@
 
-coverage/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage/patient$P.%.pdf) $(foreach P, $(PATIENTS_DIA_ONLY), coverage/patient$P.%.diaonly.pdf)
+region-coverage/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), region-coverage/patient$P.%.pdf) $(foreach P, $(PATIENTS_DIA_ONLY), region-coverage/patient$P.%.diaonly.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
 
-coverage/coverage-plots-exome.png: $(foreach P, $(PATIENTS_MATCHED), coverage/$PD.coverage.bedtools.txt coverage/$PR.coverage.bedtools.txt coverage/$PC.coverage.bedtools.txt) \
-               					   $(foreach P, $(PATIENTS_DIA_ONLY), coverage/$PD.coverage.bedtools.txt coverage/$PC.coverage.bedtools.txt) \
+exome-coverage/coverage-plots-exome.png: $(foreach P, $(PATIENTS_MATCHED), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PR.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
+               					   $(foreach P, $(PATIENTS_DIA_ONLY), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
+								   $(foreach P, $(PATIENTS_REL2), exome-coverage/$PR2.coverage.bedtools.txt) \
                					   ~/p2ry8-crlf2/scripts/plot-coverage.R
 	Rscript ~/p2ry8-crlf2/scripts/plot-coverage.R
 
-coverage/%.coverage.bedtools.txt: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed
-	samtools view -bq 1 -F 0x400 $< | bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
+exome-coverage/%.coverage.bedtools.txt: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed
+	~/tools/samtools-0.1.19/samtools view -bq 1 -F 0x400 $< | bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
 	mv $@.part $@
 
-segmented_coverage/%C.segmented-coverage.chr21.pdf: segmented_coverage/%C.segmented-coverage.tsv segmented_coverage/B36C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
+segmented-coverage/%C.segmented-coverage.chr21.pdf: segmented-coverage/%C.segmented-coverage.tsv segmented-coverage/B36C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
 	Rscript ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R \
 		--patient $*C \
 		--case $(word 1,$^) \
-		--control segmented_coverage/B36C.segmented-coverage.tsv \
+		--control segmented-coverage/B36C.segmented-coverage.tsv \
 		--output $@.part
 	mv $@.part $@
 
-segmented_coverage/allpatients.segmented-coverage.chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), segmented_coverage/$PC.segmented-coverage.chr21.pdf)
+segmented-coverage/allpatients.segmented-coverage.chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), segmented-coverage/$PC.segmented-coverage.chr21.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
@@ -230,13 +242,14 @@ segmented_coverage/allpatients.segmented-coverage.chr21.pdf: $(foreach P, $(PATI
 #-------------
 # final lists
 #-------------
-filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered_variants/$P_rem_dia.snp.filtered.tsv filtered_variants/$P_rem_dia.indel.filtered.tsv filtered_variants/$P_rem_rel.snp.filtered.tsv filtered_variants/$P_rem_rel.indel.filtered.tsv) \
-					   $(foreach P, $(PATIENTS_DIA_ONLY), filtered_variants/$P_rem_dia.snp.filtered.tsv filtered_variants/$P_rem_dia.indel.filtered.tsv) \
-					   $(foreach P, $(PATIENTS_REL2), filtered_variants/$P_rem_rel2.snp.filtered.tsv filtered_variants/$P_rem_rel2.indel.filtered.tsv) \
-#					   $(foreach P, $(PATIENTS_REL3), filtered_variants/$P_rem_rel3.snp.filtered.tsv filtered_variants/$P_rem_rel3.indel.filtered.tsv) \
+#filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv filtered-variants/$P_rem_rel.filtered.tsv)
+filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv) \
+					   $(foreach P, $(PATIENTS_DIA_ONLY), filtered-variants/$P_rem_dia.filtered.tsv) \
+					   $(foreach P, $(PATIENTS_REL2), filtered-variants/$P_rem_rel2.filtered.tsv) \
+#					   $(foreach P, $(PATIENTS_REL3), filtered-variants/$P_rem_rel3.filtered.tsv) \
 					   ~/p2ry8-crlf2/scripts/filter-variants.pl 
 	perl  ~/p2ry8-crlf2/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
-	cat filtered_variants/*.filtered.tsv >> $@.part
+	cat filtered-variants/*.filtered.tsv >> $@.part
 	mv $@.part $@
 
 filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v67/CosmicMutantExport_v67_241013.tsv ~/hdall/scripts/annotate-cosmic.pl
@@ -246,22 +259,15 @@ filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v67/Co
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@ 
 	
-filtered-variants.cosmic.normaf.tsv: filtered-variants.cosmic.tsv ~/hdall/results/cnv/hdall.cnv.tsv ~/hdall/scripts/normalize-af.pl
-	cat filtered-variants.cosmic.tsv | perl ~/hdall/scripts/normalize-af.pl \
-		--cnv-file ~/hdall/results/cnv/hdall.cnv.tsv \
-		2>&1 1>$@.part | tee -a make.log
-	mv $@.part $@ 
-
 filtered-variants.cosmic.merged.tsv: filtered-variants.cosmic.tsv
 	Rscript ~/p2ry8-crlf2/scripts/merge-filtered-variants.R 2>&1 | $(LOG)
 
-filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/p2ry8-crlf2/scripts/filter-variants.pl
-	mkdir -p filtered_variants
+filtered-variants/%.filtered.tsv: snpeff/%.somatic.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/p2ry8-crlf2/scripts/filter-variants.pl
+	mkdir -p filtered-variants
 	perl ~/p2ry8-crlf2/scripts/filter-variants.pl \
 		--sample $* \
 		--vcf-in $< \
-		--variant-type snp \
-		--vcf-out filtered_variants/$*.dbsnp.snpeff.dbNSFP.filtered.vcf \
+		--vcf-out filtered-variants/$*.filtered.vcf \
 		--rmsk-file ~/generic/data/hg19/hg19.rmsk.txt.gz \
 		--simpleRepeat-file ~/generic/data/hg19/hg19.simpleRepeat.txt.gz \
 		--segdup-file ~/generic/data/hg19/hg19.genomicSuperDups.txt.gz \
@@ -275,26 +281,6 @@ filtered_variants/%.snp.filtered.tsv: snpeff/mutect_%.dbsnp.snpeff.dbNSFP.vcf ~/
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
-filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.dbNSFP.vcf ~/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi ~/p2ry8-crlf2/scripts/filter-variants.pl
-	mkdir -p filtered_variants
-	perl ~/p2ry8-crlf2/scripts/filter-variants.pl \
-		--sample $* \
-		--vcf-in $< \
-		--variant-type indel \
-		--vcf-out filtered_variants/$*.indel.dbsnp.snpeff.dbNSFP.filtered.vcf \
-		--rmsk-file ~/generic/data/hg19/hg19.rmsk.txt.gz \
-		--simpleRepeat-file ~/generic/data/hg19/hg19.simpleRepeat.txt.gz \
-		--segdup-file ~/generic/data/hg19/hg19.genomicSuperDups.txt.gz \
-		--blacklist-file ~/generic/data/hg19/hg19.wgEncodeDacMapabilityConsensusExcludable.txt.gz \
-		--g1k-accessible ~/generic/data/hg19/paired.end.mapping.1000G..pilot.bed.gz \
-		--ucscRetro ~/generic/data/hg19/hg19.ucscRetroAli5.txt.gz \
-		--rejected-variants-file ~/hdall/results/curated-recected-variants.tsv \
-		--remission-variants-file remission-variants.tsv.gz \
-		--evs-file ~/generic/data/evs/ESP6500SI-V2-SSA137.updatedRsIds.chrAll.snps_indels.txt.gz \
-		--min-num-rem-to-exclude 3 \
-		2>&1 1>$@.part | $(LOG)
-	mv $@.part $@	
-	
 #----------------
 # PICARD
 #----------------
@@ -302,7 +288,7 @@ filtered_variants/%.indel.filtered.tsv: snpeff/indels_%.indel.dbsnp.snpeff.dbNSF
 .PHONY: picard
 picard: 
 
-picard/%.picard.insertsize.out: ~/p2ry8-crlf2/data/bam/%.duplicate_marked.realigned.recalibrated.bam ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar
+picard/%.picard.insertsize.out: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar
 	java -jar ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar \
 		INPUT=$< \
 		HISTOGRAM_FILE=picard/$*.picard.insertsize.pdf \
@@ -324,7 +310,7 @@ pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsiz
 .PHONY: pindel
 pindel: pindel/allsamples.pindel.tsv
 
-pindel/allsamples_D pindel/allsamples_SI: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
+pindel/allsamples_D pindel/allsamples_SI pindel/allsamples_LI pindel/allsamples_TD: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
 	~/tools/pindel-0.2.4w/pindel \
 		--fasta ~/generic/data/broad/hs37d5.fa \
 		--config-file pindel/pindel.cfg \

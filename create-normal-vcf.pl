@@ -2,16 +2,23 @@ use warnings FATAL => qw( all );
 use strict;
 
 use Vcf;
+use Getopt::Long;
+
+my ($sample_name);
+GetOptions
+(
+	"sample-name=s" => \$sample_name  # e.g. '242'
+);
+
+die "ERROR: --sample not specified" if (!$sample_name);
 
 my $vcf = Vcf->new(file => "-");
 $vcf->parse_header();
 my (@samples) = $vcf->get_samples();
 
 my $sample = $samples[0];
-$sample = $samples[1] if ($sample !~ /C$/);
-die "Not consitutional sample: $sample!\n" if ($sample !~ /C$/);
-
-my ($patient) = $sample =~ /(.*)C$/;
+$sample = $samples[1] if ($sample !~ /C$/ and $sample !~ /Remission$/);
+die "Not consitutional sample: $sample!\n" if ($sample !~ /C$/ and $sample !~ /Remission$/);
 
 while (my $x = $vcf->next_data_hash())
 {
@@ -36,7 +43,7 @@ while (my $x = $vcf->next_data_hash())
 		
 		next if ($n_ac < 2);
 		
-		print "$patient\t$chr\t$pos\t$ref_allele\t$alt_allele\t$n_dp\t$n_ac\tn/d\n";		
+		print "$sample_name\t$chr\t$pos\t$ref_allele\t$alt_allele\t$n_dp\t$n_ac\tn/d\n";		
 	}
 	# SNP VCF
 	else
@@ -50,7 +57,7 @@ while (my $x = $vcf->next_data_hash())
 
 		my $gt = $x->{gtypes}{$sample}{GT};
 		
-		print "$patient\t$chr\t$pos\t$ref_allele\t$alt_allele\t".($ad_ref+$ad_alt)."\t$ad_alt\t$gt\n";		
+		print "$sample_name\t$chr\t$pos\t$ref_allele\t$alt_allele\t".($ad_ref+$ad_alt)."\t$ad_alt\t$gt\n";		
 	}
 }
 $vcf->close();
