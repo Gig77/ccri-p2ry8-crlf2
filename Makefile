@@ -13,7 +13,7 @@ PATIENTS_REL3 = 715
 EXCLUDED_FOR_NOW = 841
 
 #all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: fastqc filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv segmented-coverage/allpatients.segmented-coverage.pdf coverage/coverage-plots-exome.png picard
+all: fastqc filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-genome/allpatients.coverage-genome.pdf coverage/coverage-plots-exome.png picard
 
 #-----------
 # DOWNLOAD
@@ -99,82 +99,82 @@ fastqc/%.fastqc.html: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_re
 GENES_PAR1=PPP2R3B,SHOX,CRLF2,IL3RA,P2RY8,ASMT,DHR3X,ZBED1,CD99
 GENES_IKZF1=VWC2,ZPBP,C7orf72,IKZF1,DDC,GRB10,COBL
 
-.PHONY: region-coverage
-region-coverage: region-coverage/allpatients.PAR1-X-60001-2699520.pdf \
-		  region-coverage/allpatients.IKZF1-7-49578046-51601231.pdf \
-		  region-coverage/allpatients.IKZF1_highres-7-50332565-50494236.pdf \
-		  region-coverage/allpatients.IKZF2-2-211852462-217849831.pdf \
-		  region-coverage/allpatients.IKZF3-17-37789665-38184756.pdf \
-		  region-coverage/allpatients.PAX5-9-35800105-38084658.pdf \
-		  region-coverage/allpatients.EBF1-5-155175854-161576670.pdf \
-		  region-coverage/allpatients.ETV6-12-10309186-13646908.pdf \
-		  region-coverage/allpatients.RUNX1-21-34971197-38263248.pdf \
-		  region-coverage/allpatients.VPREB1-22-21866719-24317257.pdf \
-		  region-coverage/allpatients.ERG-21-38349519-41562975.pdf \
-		  region-coverage/allpatients.TP53-17-7440139-7721205.pdf \
-		  region-coverage/allpatients.RB1-13-46907242-51051394.pdf \
-		  region-coverage/allpatients.CDKN2AandB-9-20309360-23721195.pdf \
-		  region-coverage/allpatients.CREBBP-16-3067833-4618486.pdf \
-		  region-coverage/allpatients.MLL2-12-49295653-49584389.pdf \
-		  region-coverage/allpatients.EZH2-7-148002918-149209618.pdf \
-		  region-coverage/allpatients.NCOR1-17-15245025-16768909.pdf \
-		  region-coverage/allpatients.TUSC3-8-12275019-19439531.pdf \
-		  region-coverage/allpatients.WHSC1-4-1615018-2430195.pdf \
-		  region-coverage/allpatients.NT5C2-10-104141780-105714035.pdf \
-		  region-coverage/allpatients.LEF1-4-108313628-110095704.pdf \
-		  region-coverage/allpatients.TCF3-19-1261454-2018719.pdf \
-		  region-coverage/allpatients.BLNK-10-97442705-98708695.pdf \
-		  region-coverage/allpatients.FOXO3A-6-108206749-109779719.pdf \
-		  region-coverage/allpatients.FBXW7-4-151992600-154510682.pdf \
-		  region-coverage/allpatients.CREG1-1-167207942-167849758.pdf \
-		  region-coverage/allpatients.FLT3_PAN3-13-27955721-29384162.pdf \
-		  region-coverage/allpatients.PDGFRB-5-149383560-149648693.pdf \
-		  region-coverage/allpatients.STRN3-14-30942316-31995615.pdf \
-		  region-coverage/allpatients.RANBP2-2-109007910-109671216.pdf \
-		  region-coverage/allpatients.EPOR-19-11393474-11619196.pdf \
-		  region-coverage/allpatients.SH2B3-12-111621200-112196224.pdf \
-		  region-coverage/allpatients.HIST1H2BD_HIST1H1E-6-26033646-26316674.pdf \
-		  region-coverage/allpatients.SPRED1-15-35957458-40803200.pdf \
-		  region-coverage/allpatients.ADD3-10-111062840-113085360.pdf \
-		  region-coverage/allpatients.ATP10A-15-24452756-27861838.pdf \
-		  region-coverage/allpatients.NUP214-9-133609878-134537138.pdf
+.PHONY: coverage-region
+coverage-region: coverage-region/allpatients.PAR1-X-60001-2699520.pdf \
+		  coverage-region/allpatients.IKZF1-7-49578046-51601231.pdf \
+		  coverage-region/allpatients.IKZF1_highres-7-50332565-50494236.pdf \
+		  coverage-region/allpatients.IKZF2-2-211852462-217849831.pdf \
+		  coverage-region/allpatients.IKZF3-17-37789665-38184756.pdf \
+		  coverage-region/allpatients.PAX5-9-35800105-38084658.pdf \
+		  coverage-region/allpatients.EBF1-5-155175854-161576670.pdf \
+		  coverage-region/allpatients.ETV6-12-10309186-13646908.pdf \
+		  coverage-region/allpatients.RUNX1-21-34971197-38263248.pdf \
+		  coverage-region/allpatients.VPREB1-22-21866719-24317257.pdf \
+		  coverage-region/allpatients.ERG-21-38349519-41562975.pdf \
+		  coverage-region/allpatients.TP53-17-7440139-7721205.pdf \
+		  coverage-region/allpatients.RB1-13-46907242-51051394.pdf \
+		  coverage-region/allpatients.CDKN2AandB-9-20309360-23721195.pdf \
+		  coverage-region/allpatients.CREBBP-16-3067833-4618486.pdf \
+		  coverage-region/allpatients.MLL2-12-49295653-49584389.pdf \
+		  coverage-region/allpatients.EZH2-7-148002918-149209618.pdf \
+		  coverage-region/allpatients.NCOR1-17-15245025-16768909.pdf \
+		  coverage-region/allpatients.TUSC3-8-12275019-19439531.pdf \
+		  coverage-region/allpatients.WHSC1-4-1615018-2430195.pdf \
+		  coverage-region/allpatients.NT5C2-10-104141780-105714035.pdf \
+		  coverage-region/allpatients.LEF1-4-108313628-110095704.pdf \
+		  coverage-region/allpatients.TCF3-19-1261454-2018719.pdf \
+		  coverage-region/allpatients.BLNK-10-97442705-98708695.pdf \
+		  coverage-region/allpatients.FOXO3A-6-108206749-109779719.pdf \
+		  coverage-region/allpatients.FBXW7-4-151992600-154510682.pdf \
+		  coverage-region/allpatients.CREG1-1-167207942-167849758.pdf \
+		  coverage-region/allpatients.FLT3_PAN3-13-27955721-29384162.pdf \
+		  coverage-region/allpatients.PDGFRB-5-149383560-149648693.pdf \
+		  coverage-region/allpatients.STRN3-14-30942316-31995615.pdf \
+		  coverage-region/allpatients.RANBP2-2-109007910-109671216.pdf \
+		  coverage-region/allpatients.EPOR-19-11393474-11619196.pdf \
+		  coverage-region/allpatients.SH2B3-12-111621200-112196224.pdf \
+		  coverage-region/allpatients.HIST1H2BD_HIST1H1E-6-26033646-26316674.pdf \
+		  coverage-region/allpatients.SPRED1-15-35957458-40803200.pdf \
+		  coverage-region/allpatients.ADD3-10-111062840-113085360.pdf \
+		  coverage-region/allpatients.ATP10A-15-24452756-27861838.pdf \
+		  coverage-region/allpatients.NUP214-9-133609878-134537138.pdf
 		  
 
-segmented-coverage/allpatients.segmented-coverage.pdf: $(foreach P, $(PATIENTS_MATCHED), segmented-coverage/$PD.segmented-coverage.pdf segmented-coverage/$PR.segmented-coverage.pdf) \
-								    				   $(foreach P, $(PATIENTS_DIA_ONLY), segmented-coverage/$PD.segmented-coverage.pdf)
+coverage-genome/allpatients.coverage-genome.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-genome/$PD.coverage-genome.pdf coverage-genome/$PR.coverage-genome.pdf) \
+								    				   $(foreach P, $(PATIENTS_DIA_ONLY), coverage-genome/$PD.coverage-genome.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
 
-segmented-coverage/%D.segmented-coverage.pdf: segmented-coverage/%D.segmented-coverage.tsv segmented-coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
-	mkdir -p segmented-coverage/circos
+coverage-genome/%D.coverage-genome.pdf: coverage-genome/%D.coverage-genome.tsv coverage-genome/%C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	mkdir -p coverage-genome/circos
 	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
 		--patient $*D \
 		--tumor $(word 1,$^) \
 		--normal $(word 2,$^) \
-		--circos segmented-coverage/circos/$*D.cnv.circos.tsv \
+		--circos coverage-genome/circos/$*D.cnv.circos.tsv \
 		--output $@.part
 	mv $@.part $@
 
-segmented-coverage/%R.segmented-coverage.pdf: segmented-coverage/%R.segmented-coverage.tsv segmented-coverage/%C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
-	mkdir -p segmented-coverage/circos
+coverage-genome/%R.coverage-genome.pdf: coverage-genome/%R.coverage-genome.tsv coverage-genome/%C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	mkdir -p coverage-genome/circos
 	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
 		--patient $*R \
 		--tumor $(word 1,$^) \
 		--normal $(word 2,$^) \
-		--circos segmented-coverage/circos/$*R.cnv.circos.tsv \
+		--circos coverage-genome/circos/$*R.cnv.circos.tsv \
 		--output $@.part
 	mv $@.part $@
 
-#segmented-coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
-segmented-coverage/%.segmented-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
-	mkdir -p segmented-coverage
+#coverage-genome/%.coverage-genome.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
+coverage-genome/%.coverage-genome.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
+	mkdir -p coverage-genome
 	~/tools/samtools-0.1.19/samtools depth -Q 1 $< \
 		| perl ~/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 	
-region-coverage/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
+coverage-region/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
 	~/tools/samtools-0.1.19/samtools depth \
 		-Q 1 \
 		-b /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed \
@@ -184,7 +184,7 @@ region-coverage/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_proc
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
-region-coverage/patient%.pdf: region-coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv region-coverage/$$(word 1, $$(subst ., , %))R.exon-coverage.tsv region-coverage/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
+coverage-region/patient%.pdf: coverage-region/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))R.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
 	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
 		--patient $(word 1, $(subst ., , $*)) \
 		--diagnosis $(word 1,$^) \
@@ -198,7 +198,7 @@ region-coverage/patient%.pdf: region-coverage/$$(word 1, $$(subst ., , %))D.exon
 		$(if $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),--display-genes $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),)
 	mv $@.part $@
 
-region-coverage/patient%.diaonly.pdf: region-coverage/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv region-coverage/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
+coverage-region/patient%.diaonly.pdf: coverage-region/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
 	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
 		--patient $(word 1, $(subst ., , $*)) \
 		--diagnosis $(word 1,$^) \
@@ -211,7 +211,7 @@ region-coverage/patient%.diaonly.pdf: region-coverage/$$(word 1, $$(subst ., , %
 		$(if $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),--display-genes $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),)
 	mv $@.part $@
 
-region-coverage/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), region-coverage/patient$P.%.pdf) $(foreach P, $(PATIENTS_DIA_ONLY), region-coverage/patient$P.%.diaonly.pdf)
+coverage-region/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-region/patient$P.%.pdf) $(foreach P, $(PATIENTS_DIA_ONLY), coverage-region/patient$P.%.diaonly.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
@@ -226,15 +226,15 @@ exome-coverage/%.coverage.bedtools.txt: ~/p2ry8-crlf2/data/bam/variant_calling_p
 	~/tools/samtools-0.1.19/samtools view -bq 1 -F 0x400 $< | bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
 	mv $@.part $@
 
-segmented-coverage/%C.segmented-coverage.chr21.pdf: segmented-coverage/%C.segmented-coverage.tsv segmented-coverage/B36C.segmented-coverage.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
+coverage-genome/%C.coverage-genome.chr21.pdf: coverage-genome/%C.coverage-genome.tsv coverage-genome/B36C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
 	Rscript ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R \
 		--patient $*C \
 		--case $(word 1,$^) \
-		--control segmented-coverage/B36C.segmented-coverage.tsv \
+		--control coverage-genome/B36C.coverage-genome.tsv \
 		--output $@.part
 	mv $@.part $@
 
-segmented-coverage/allpatients.segmented-coverage.chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), segmented-coverage/$PC.segmented-coverage.chr21.pdf)
+coverage-genome/allpatients.coverage-genome.chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), coverage-genome/$PC.coverage-genome.chr21.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
