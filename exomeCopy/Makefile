@@ -6,38 +6,47 @@ SHELL=/bin/bash  # required to make pipefail work
 LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S ", localtime), $$ARGV[0], "$@: $$_";'
 
 PATIENTS_TEST = 92
-PATIENTS_MATCHED = 108 839 92 B36 BB16 GI13 HV57 HV80 N7 S23 737
-PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 833 948
-PATIENTS_REL2 = 108 737 
-PATIENTS_REL3 = 715 
-PATIENTS_EXCLUDED = LU3 SN18
+PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
+PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 841 887 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
+PATIENTS_REL2 = 108 737
+PATIENTS_REL3 = 715
 
 all: circos/allpatients.relapse.circos.png circos/allpatients.diagnosis.circos.png
 
-counts.p2ry8.RData: ~/p2ry8-crlf2/data/bam/108C.duplicate_marked.realigned.recalibrated.bam
+counts.RData: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_S23C_realigned.bam
 	Rscript ~/generic/scripts/exomeCopy/get-counts.R
 
-counts.bg.p2ry8.RData: counts.p2ry8.RData ~/generic/scripts/exomeCopy/calc-background.R
+counts.bg.RData: counts.RData ~/generic/scripts/exomeCopy/calc-background.R
 	Rscript ~/generic/scripts/exomeCopy/calc-background.R
 
-%.combined.pdf %.compiled-segments.tsv: counts.bg.p2ry8.RData ~/generic/scripts/exomeCopy/get-cnv.R
-	Rscript ~/generic/scripts/exomeCopy/get-cnv.R --sample S$*
+%.combined.pdf %.compiled-segments.tsv: counts.bg.RData ~/generic/scripts/exomeCopy/get-cnv.R
+	Rscript ~/generic/scripts/exomeCopy/get-cnv.R --sample $*
 
 allpatients.compiled-segments.exomeCopy.tsv: $(foreach P, $(PATIENTS_MATCHED), $PC.compiled-segments.tsv $PD.compiled-segments.tsv $PR.compiled-segments.tsv) \
-                                             $(foreach P, $(PATIENTS_DIA_ONLY), $PC.compiled-segments.tsv $PD.compiled-segments.tsv) \
-                                             $(foreach P, $(PATIENTS_REL2), $PR2.compiled-segments.tsv) \
-                                             ~/generic/scripts/exomeCopy/merge-cnvs.R
+											 $(foreach P, $(PATIENTS_DIA_ONLY), $PC.compiled-segments.tsv $PD.compiled-segments.tsv) \
+											 $(foreach P, $(PATIENTS_REL2), $PR2.compiled-segments.tsv) \
+											 ~/generic/scripts/exomeCopy/merge-cnvs.R
 	Rscript ~/generic/scripts/exomeCopy/merge-cnvs.R
+	mv $@.part $@
 
-circos/%.somatic.circos.tsv: allpatients.compiled-segments.exomeCopy.tsv ~/p2ry8-crlf2/scripts/exomeCopy/get-circos-somatic.R
-	Rscript ~/p2ry8-crlf2/scripts/exomeCopy/get-circos-somatic.R --segments-file $< --output-file $@.part --tumor S$* --normal wurscht
+allpatients.filtered-segments.exomeCopy.tsv: allpatients.compiled-segments.exomeCopy.tsv ~/generic/scripts/exomeCopy/filter-segments.R
+	Rscript ~/generic/scripts/exomeCopy/filter-segments.R
+	mv $@.part $@
+	 
+.PHONY: circos
+circos: circos/allpatients.diagnosis.circos.png circos/allpatients.relapse.circos.png
+ 
+circos/%.somatic.circos.tsv: allpatients.filtered-segments.exomeCopy.tsv ~/p2ry8-crlf2/scripts/exomeCopy/get-circos-somatic.R
+	mkdir -p circos
+	Rscript ~/p2ry8-crlf2/scripts/exomeCopy/get-circos-somatic.R --segments-file $< --output-file $@.part --tumor $* --normal wurscht
 	mv $@.part $@ 
 
-circos/allpatients.diagnosis.circos.png: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), circos/$PD.somatic.circos.tsv) ~/p2ry8-crlf2/scripts/exomeCopy/template.circos.conf ~/p2ry8-crlf2/scripts/exomeCopy/make-circos-conf.pl ~/p2ry8-crlf2/scripts/exomeCopy/gene-labels.txt
+circos/allpatients.diagnosis.circos.png: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), circos/$PD.somatic.circos.tsv) ~/p2ry8-crlf2/scripts/exomeCopy/template.circos.conf ~/p2ry8-crlf2/scripts/exomeCopy/make-circos-conf.pl ~/p2ry8-crlf2/scripts/exomeCopy/gene-labels.txt ~/p2ry8-crlf2/scripts/exomeCopy/sample-order.dia.txt
 	rm -f circos/diagnosis.circos.conf
 	perl ~/p2ry8-crlf2/scripts/exomeCopy/make-circos-conf.pl \
 		--template ~/p2ry8-crlf2/scripts/exomeCopy/template.circos.conf \
 		--data-dir ~/p2ry8-crlf2/results/exomeCopy/circos \
+		--order-file ~/p2ry8-crlf2/scripts/exomeCopy/sample-order.dia.txt \
 		--file-pattern D.somatic.circos.tsv \
 		--gfx-output-file $@.part \
 		> circos/diagnosis.circos.conf

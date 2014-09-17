@@ -7,19 +7,22 @@ LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S "
 
 PATIENTS_TEST = 92
 PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
-PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 887 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
+PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 887 841 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
 PATIENTS_REL2 = 108 737
 PATIENTS_REL3 = 715
-EXCLUDED_FOR_NOW = 841
 
 #all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: fastqc filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-genome/allpatients.coverage-genome.pdf coverage/coverage-plots-exome.png picard
+all: fastqc filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-genome/allpatients.coverage-genome.pdf coverage/coverage-plots-exome.png coverage-chr21/allpatients.coverage-chr21.pdf picard
 
 #-----------
 # DOWNLOAD
 #-----------
 #wget -r -np -e robots=off --reject *.wig.txt,*_stats.out http://www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_zahyee0Zooxiphoogo5ooMee3mai8uy8/mutect_b37/ 
 #wget -r -np -e robots=off --reject *.wig.txt,*_stats.out http://www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_zahyee0Zooxiphoogo5ooMee3mai8uy8/indels_b37/
+#MuTect,Indelocator results only:
+#wget -r -np -e robots=off --accept D_annotated.vcf,R_annotated.vcf,R1_annotated.vcf,R2_annotated.vcf,Diagnosis_annotated.vcf,Relapse_annotated.vcf --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_zahyee0Zooxiphoogo5ooMee3mai8uy8/
+#reprocessed HD samples
+#wget -r -np -e robots=off --accept *715*,*460*,*564*,*545* --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0003_HDBALL_1ca2f4fb9c73e5eb3986819f818f8acb/
 
 ~/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/%_calls.vcf: ~/p2ry8-crlf2/data/mutect_somatic_mutations/%_calls.vcf
 	cat $< | perl -ne 's/^([\dXY])/chr$$1/; s/^MT/chrM/; print $$_;' > $@.part
@@ -84,7 +87,8 @@ snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf ~/generic/data/dbNSF
 .PHONY: fastqc
 fastqc: $(foreach P, $(PATIENTS_MATCHED), fastqc/$PC.fastqc.html fastqc/$PD.fastqc.html fastqc/$PR.fastqc.html) \
         $(foreach P, $(PATIENTS_DIA_ONLY), fastqc/$PC.fastqc.html fastqc/$PD.fastqc.html) \
-		$(foreach P, $(PATIENTS_REL2), fastqc/$PR2.fastqc.html)
+		$(foreach P, $(PATIENTS_REL2), fastqc/$PR2.fastqc.html) \
+		$(foreach P, $(PATIENTS_REL3), fastqc/$PR3.fastqc.html)
 	
 fastqc/%.fastqc.html: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p fastqc/$*.part
@@ -93,7 +97,7 @@ fastqc/%.fastqc.html: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_re
 	rmdir fastqc/$*.part
 
 #-------------
-# CNV
+# REGION COVERAGE
 #-------------
 
 GENES_PAR1=PPP2R3B,SHOX,CRLF2,IL3RA,P2RY8,ASMT,DHR3X,ZBED1,CD99
@@ -137,43 +141,9 @@ coverage-region: coverage-region/allpatients.PAR1-X-60001-2699520.pdf \
 		  coverage-region/allpatients.SPRED1-15-35957458-40803200.pdf \
 		  coverage-region/allpatients.ADD3-10-111062840-113085360.pdf \
 		  coverage-region/allpatients.ATP10A-15-24452756-27861838.pdf \
-		  coverage-region/allpatients.NUP214-9-133609878-134537138.pdf
+		  coverage-region/allpatients.NUP214-9-133609878-134537138.pdf \
+		  coverage-region/allpatients.BTG1-12-91300000-93550000.pdf
 		  
-
-coverage-genome/allpatients.coverage-genome.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-genome/$PD.coverage-genome.pdf coverage-genome/$PR.coverage-genome.pdf) \
-								    				   $(foreach P, $(PATIENTS_DIA_ONLY), coverage-genome/$PD.coverage-genome.pdf)
-	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
-	mv $@.part $@
-	rm $^
-
-coverage-genome/%D.coverage-genome.pdf: coverage-genome/%D.coverage-genome.tsv coverage-genome/%C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
-	mkdir -p coverage-genome/circos
-	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient $*D \
-		--tumor $(word 1,$^) \
-		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/$*D.cnv.circos.tsv \
-		--output $@.part
-	mv $@.part $@
-
-coverage-genome/%R.coverage-genome.pdf: coverage-genome/%R.coverage-genome.tsv coverage-genome/%C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
-	mkdir -p coverage-genome/circos
-	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient $*R \
-		--tumor $(word 1,$^) \
-		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/$*R.cnv.circos.tsv \
-		--output $@.part
-	mv $@.part $@
-
-#coverage-genome/%.coverage-genome.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
-coverage-genome/%.coverage-genome.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
-	mkdir -p coverage-genome
-	~/tools/samtools-0.1.19/samtools depth -Q 1 $< \
-		| perl ~/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
-		2>&1 1>$@.part | $(LOG)
-	mv $@.part $@
-	
 coverage-region/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
 	~/tools/samtools-0.1.19/samtools depth \
 		-Q 1 \
@@ -216,6 +186,66 @@ coverage-region/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-re
 	mv $@.part $@
 	rm $^
 
+#-------------
+# WHOLE-GENOME COVERAGE
+#-------------
+
+coverage-genome/allpatients.coverage-genome.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-genome/$PD.coverage-genome.pdf coverage-genome/$PR.coverage-genome.pdf) \
+								    		     $(foreach P, $(PATIENTS_DIA_ONLY), coverage-genome/$PD.coverage-genome.pdf)
+	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
+	mv $@.part $@
+	rm $^
+
+coverage-genome/%D.coverage-genome.pdf: coverage-genome/%D.coverage-genome.tsv coverage-genome/%C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	mkdir -p coverage-genome/circos
+	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
+		--patient $*D \
+		--tumor $(word 1,$^) \
+		--normal $(word 2,$^) \
+		--circos coverage-genome/circos/$*D.cnv.circos.tsv \
+		--output $@.part
+	mv $@.part $@
+
+coverage-genome/%R.coverage-genome.pdf: coverage-genome/%R.coverage-genome.tsv coverage-genome/%C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage.R
+	mkdir -p coverage-genome/circos
+	Rscript ~/hdall/scripts/cnv/plot-segment-coverage.R \
+		--patient $*R \
+		--tumor $(word 1,$^) \
+		--normal $(word 2,$^) \
+		--circos coverage-genome/circos/$*R.cnv.circos.tsv \
+		--output $@.part
+	mv $@.part $@
+
+#coverage-genome/%.coverage-genome.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/hdall/scripts/cnv/get-segment-coverage.pl
+coverage-genome/%.coverage-genome.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
+	mkdir -p coverage-genome
+	~/tools/samtools-0.1.19/samtools depth -Q 1 $< \
+		| perl ~/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
+		2>&1 1>$@.part | $(LOG)
+	mv $@.part $@
+
+#-------------
+# COVERAGE CHROMOSOME 21
+#-------------
+
+coverage-chr21/allpatients.coverage-chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), coverage-chr21/$PC.coverage-chr21.pdf)
+	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
+	mv $@.part $@
+	rm $^
+
+coverage-chr21/%C.coverage-chr21.pdf: coverage-genome/%C.coverage-genome.tsv coverage-genome/B36C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
+	mkdir -p coverage-chr21 
+	Rscript ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R \
+		--patient $*C \
+		--case $(word 1,$^) \
+		--control coverage-genome/B36C.coverage-genome.tsv \
+		--output $@.part
+	mv $@.part $@
+
+#-------------
+# EXOME COVERAGE PLOT (CURVE)
+#-------------
+
 exome-coverage/coverage-plots-exome.png: $(foreach P, $(PATIENTS_MATCHED), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PR.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
                					   $(foreach P, $(PATIENTS_DIA_ONLY), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
 								   $(foreach P, $(PATIENTS_REL2), exome-coverage/$PR2.coverage.bedtools.txt) \
@@ -226,34 +256,20 @@ exome-coverage/%.coverage.bedtools.txt: ~/p2ry8-crlf2/data/bam/variant_calling_p
 	~/tools/samtools-0.1.19/samtools view -bq 1 -F 0x400 $< | bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
 	mv $@.part $@
 
-coverage-genome/%C.coverage-genome.chr21.pdf: coverage-genome/%C.coverage-genome.tsv coverage-genome/B36C.coverage-genome.tsv ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R
-	Rscript ~/hdall/scripts/cnv/plot-segment-coverage-chr21.R \
-		--patient $*C \
-		--case $(word 1,$^) \
-		--control coverage-genome/B36C.coverage-genome.tsv \
-		--output $@.part
-	mv $@.part $@
-
-coverage-genome/allpatients.coverage-genome.chr21.pdf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY), coverage-genome/$PC.coverage-genome.chr21.pdf)
-	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
-	mv $@.part $@
-	rm $^
-
 #-------------
 # final lists
 #-------------
-#filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv filtered-variants/$P_rem_rel.filtered.tsv)
-filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv) \
+#					   $(foreach P, $(PATIENTS_REL3), filtered-variants/$P_rem_rel3.filtered.tsv)
+filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv filtered-variants/$P_rem_rel.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_DIA_ONLY), filtered-variants/$P_rem_dia.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_REL2), filtered-variants/$P_rem_rel2.filtered.tsv) \
-#					   $(foreach P, $(PATIENTS_REL3), filtered-variants/$P_rem_rel3.filtered.tsv) \
 					   ~/p2ry8-crlf2/scripts/filter-variants.pl 
-	perl  ~/p2ry8-crlf2/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
+	perl ~/p2ry8-crlf2/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
 	cat filtered-variants/*.filtered.tsv >> $@.part
 	mv $@.part $@
 
-filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v67/CosmicMutantExport_v67_241013.tsv ~/hdall/scripts/annotate-cosmic.pl
-	cat $(word 1,$^) | perl ~/hdall/scripts/annotate-cosmic.pl \
+filtered-variants.cosmic.tsv: filtered-variants.tsv ~/generic/data/cosmic/v67/CosmicMutantExport_v67_241013.tsv ~/p2ry8-crlf2/scripts/annotate-cosmic.pl
+	cat $(word 1,$^) | perl ~/p2ry8-crlf2/scripts/annotate-cosmic.pl \
 		--cosmic-mutation-file $(word 2,$^) \
 		--only-confirmed \
 		2>&1 1>$@.part | $(LOG)
@@ -281,14 +297,33 @@ filtered-variants/%.filtered.tsv: snpeff/%.somatic.dbsnp.snpeff.dbNSFP.vcf ~/hda
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
+impacted-genes.tsv: filtered-variants.tsv ~/p2ry8-crlf2/scripts/impacted-genes.pl
+	cat $< | perl ~/p2ry8-crlf2/scripts/impacted-genes.pl > $@.part
+	mv $@.part $@
+
+gene-patient-matrix.tsv: filtered-variants.tsv ~/p2ry8-crlf2/scripts/get-gene-patient-matrix.R
+	Rscript ~/p2ry8-crlf2/scripts/get-gene-patient-matrix.R
+	mv $@.part $@
+
+#----------------
+# FIGURES
+#----------------
+
+figures/mutations-per-patient.pdf: filtered-variants.tsv ~/p2ry8-crlf2/scripts/figures/mutations-per-patient.R
+	Rscript ~/p2ry8-crlf2/scripts/figures/mutations-per-patient.R
+	
 #----------------
 # PICARD
 #----------------
 
 .PHONY: picard
-picard: 
+picard: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out picard/$PR.picard.insertsize.out) \
+        $(foreach P, $(PATIENTS_DIA_ONLY), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out) \
+		$(foreach P, $(PATIENTS_REL2), picard/$PR2.picard.insertsize.out) \
+		$(foreach P, $(PATIENTS_REL3), picard/$PR3.picard.insertsize.out)
 
 picard/%.picard.insertsize.out: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar
+	mkdir -p picard
 	java -jar ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar \
 		INPUT=$< \
 		HISTOGRAM_FILE=picard/$*.picard.insertsize.pdf \

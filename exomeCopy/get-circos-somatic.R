@@ -18,11 +18,11 @@ if (invalid(opt$tumor)) stop("tumor sample name not specified")
 if (invalid(opt$normal)) stop("normal sample name not specified")
 
 ca <- read.delim(opt$'segments-file', stringsAsFactor=F)
-cf <- ca[ca$sample==opt$tumor & ca$copy.count != 2 & (ca$log.odds == 0 | ca$log.odds > 20) & !grepl("C", ca$overlap.samples),]
+ca <- ca[ca$sample==opt$tumor,]
 
-if (nrow(cf) > 0) {
+if (nrow(ca) > 0) {
 	colors <- list("0"="dred", "1"="red", "2"="black", "3"="blue", "4"="dblue", "5"="vdblue", "6"="vvdblue")
-	out <- data.frame(paste0("hs", cf$seqnames), cf$start, cf$end, paste0("fill_color=", sapply(colors[as.character(cf$copy.count)], "[[", 1)))
+	out <- data.frame(paste0("hs", ca$seqnames), ca$start, ca$end, paste0("fill_color=", sapply(colors[as.character(ca$copy.count)], "[[", 1)))
 	write.table(out, file=opt$'output-file', quote=FALSE, sep="\t", row.names=FALSE, col.names=FALSE)	
 } else {
 	system(paste("touch", opt$'output-file')) # create empty file

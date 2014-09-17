@@ -38,6 +38,7 @@ if ($header)
 {
 	print "patient\t";		
 	print "sample\t";
+	print "cohort\t";
 	print "var_type\t";
 	print "status\t";
 	print "rejected_because\t";
@@ -113,6 +114,14 @@ my %patient2sample = (
 	'N7_rem' => 'N7C',						'N7_dia' => 'N7D',						'N7_rel' => 'N7R',
 	'S23_rem' => 'S23C',					'S23_dia' => 'S23D',					'S23_rel' => 'S23R',
 	'SN18_rem' => 'SN18C',					'SN18_dia' => 'SN18D',					'SN18_rel' => 'SN18R',
+	'DL2_rem' => 'DL2_Remission',			'DL2_dia' => 'DL2_Diagnosis',			'DL2_rel' => '19981_DL2_R_Relapse',
+	'GI8_rem' => 'GI8_Remission',			'GI8_dia' => 'GI8_Diagnosis',			'GI8_rel' => '19551_GI8_R_Relapse',
+	'MA5_rem' => 'MA5_Remission',			'MA5_dia' => 'MA5_Diagnosis',			'MA5_rel' => '19319_MA5_R_Relapse',
+	'VS14645_rem' => 'VS14645_Remission',	'VS14645_dia' => 'VS14645_Diagnosis',	'VS14645_rel' => '9931_Relapse',
+	'BJ17183_rem' => 'BJ17183_Remission',	'BJ17183_dia' => 'BJ17183_Diagnosis',	'BJ17183_rel' => '14367_Relapse',
+	'SE15285_rem' => 'SE1528_5_Remission',	'SE15285_dia' => 'SE15285_Diagnosis',	'SE15285_rel' => '13977_Relapse',
+	'DS10898_rem' => 'DS10898_Remission',	'DS10898_dia' => 'DS10898_Diagnosis',	'DS10898_rel' => '5143_Relapse',
+	'KE17247_rem' => 'KE17247_Remission',	'KE17247_dia' => 'KE17247_Diagnosis',	'KE17247_rel' => '15721_Relapse',
 
 	'242_rem' => '242C',					'242_dia' => '242D',
 	'360_rem' => '360C',					'360_dia' => '360D',
@@ -122,6 +131,7 @@ my %patient2sample = (
 	'506_rem' => '506C',					'506_dia' => '506D',
 	'769_rem' => '769C',					'769_dia' => '769D',
 	'833_rem' => '833C',					'833_dia' => '833D',
+	'841_rem' => '842_Remission',			'841_dia' => '841_Diagnosis',
 	'948_rem' => '948C',					'948_dia' => '948D',
 	'802_rem' => '802_Remission',			'802_dia' => '802_Diagnosis',
 	'887_rem' => '887_Remission',			'887_dia' => '887_Diagnosis',
@@ -131,21 +141,60 @@ my %patient2sample = (
 	'1060_rem' => '1060_Remission',			'1060_dia' => '1060_Diagnosis',
 	'1066_rem' => '1066_Remission',			'1066_dia' => '1066_Diagnosis',
 	'1089_rem' => '1089_Remission',			'1089_dia' => '1089_Diagnosis',
-	'BJ17183_rem' => 'BJ17183_Remission',	'BJ17183_dia' => 'BJ17183_Diagnosis',
-	'DL2_rem' => 'DL2_Remission',			'DL2_dia' => 'DL2_Diagnosis',
-	'DS10898_rem' => 'DS10898_Remission',	'DS10898_dia' => 'DS10898_Diagnosis',
-	'GI8_rem' => 'GI8_Remission',			'GI8_dia' => 'GI8_Diagnosis',
 	'HW11537_rem' => 'HW11537_Remission',	'HW11537_dia' => 'HW11537_Diagnosis',
-	'KE17247_rem' => 'KE17247_Remission',	'KE17247_dia' => 'KE17247_Diagnosis',
 	'KT14158_rem' => 'KT14158_Remission',	'KT14158_dia' => 'KT14158_Diagnosis',
-	'MA5_rem' => 'MA5_Remission',			'MA5_dia' => 'MA5_Diagnosis',
-	'SE15285_rem' => 'SE1528_5_Remission',	'SE15285_dia' => 'SE15285_Diagnosis',
-	'TL14516_rem' => 'TL14516_Remission',	'TL14516_dia' => 'TL14516_Diagnosis',
-	'VS14645_rem' => 'VS14645_Remission',	'VS14645_dia' => 'VS14645_Diagnosis'
+	'TL14516_rem' => 'TL14516_Remission',	'TL14516_dia' => 'TL14516_Diagnosis'
+);
+
+my %patient2cohort = (
+	'108' => 'relapsing', 
+	'92' => 'relapsing', 
+	'737' => 'relapsing', 
+	'839' => 'relapsing', 
+	'B36' => 'relapsing', 
+	'BB16' => 'relapsing', 
+	'DL2' => 'relapsing', 
+	'GI8' => 'relapsing', 
+	'GI13' => 'relapsing', 
+	'HV57' => 'relapsing',
+	'HV80' => 'relapsing',
+	'LU3' => 'relapsing',
+	'MA5' => 'relapsing',
+	'N7' => 'relapsing',
+	'S23' => 'relapsing',
+	'SN18' => 'relapsing',
+	'DS10898' => 'relapsing',
+	'VS14645' => 'relapsing',
+	'SE15285' => 'relapsing',
+	'BJ17183' => 'relapsing',
+	'KE17247' => 'relapsing',
+	
+	'242' => 'non-relapsing',
+	'360' => 'non-relapsing',
+	'365' => 'non-relapsing',
+	'379' => 'non-relapsing',
+	'400' => 'non-relapsing',
+	'506' => 'non-relapsing',
+	'769' => 'non-relapsing',
+	'802' => 'non-relapsing',
+	'833' => 'non-relapsing',
+	'887' => 'non-relapsing',
+	'841' => 'non-relapsing',
+	'903' => 'non-relapsing',
+	'948' => 'non-relapsing',
+	'957' => 'non-relapsing',
+	'961' => 'non-relapsing',
+	'1060' => 'non-relapsing',
+	'1066' => 'non-relapsing',
+	'1089' => 'non-relapsing',
+	'HW11537' => 'non-relapsing',
+	'KT14158' => 'non-relapsing',
+	'TL14516' => 'non-relapsing'
 );
 
 my ($patient, $vcf_sample_id_rem, $vcf_sample_id_tum) = split("_", $sample_identifier) or croak "ERROR: could not parse sample identifier\n";
 my $cmp_type = $vcf_sample_id_rem."_".$vcf_sample_id_tum;
+die "ERROR: could not determine cohort for patient $patient\n" if (!$patient2cohort{$patient});
 die "ERROR: invalid comparison type: $cmp_type\n" if ($cmp_type ne 'rem_dia' and $cmp_type ne 'rem_rel' and $cmp_type ne 'rem_rel1' and $cmp_type ne 'rem_rel2' and $cmp_type ne 'rem_rel3');
 
 $vcf_sample_id_rem = $patient2sample{$patient."_$vcf_sample_id_rem"}; 
@@ -546,6 +595,7 @@ while (my $line = $vcf->next_line())
 	
 	print "$patient\t";		
 	print "$cmp_type\t";
+	print $patient2cohort{$patient}, "\t";
 	print "$var_type\t";
 	print @rejected_because > 0 ? "REJECT\t" : "$status\t";
 	print @rejected_because > 0 ? join(";", @rejected_because) : "", "\t";
