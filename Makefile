@@ -6,13 +6,13 @@ SHELL=/bin/bash  # required to make pipefail work
 LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S ", localtime), $$ARGV[0], "$@: $$_";'
 
 PATIENTS_TEST = 92
-PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
+PATIENTS_MATCHED = 108 92 460 545 564 715 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
 PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 887 841 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
 PATIENTS_REL2 = 108 737
 PATIENTS_REL3 = 715
 
 #all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: fastqc filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-genome/allpatients.coverage-genome.pdf coverage/coverage-plots-exome.png coverage-chr21/allpatients.coverage-chr21.pdf picard
+all: gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf exome-coverage/coverage-plots-exome.png coverage-chr21/allpatients.coverage-chr21.pdf picard
 
 #-----------
 # DOWNLOAD
@@ -249,6 +249,7 @@ coverage-chr21/%C.coverage-chr21.pdf: coverage-genome/%C.coverage-genome.tsv cov
 exome-coverage/coverage-plots-exome.png: $(foreach P, $(PATIENTS_MATCHED), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PR.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
                					   $(foreach P, $(PATIENTS_DIA_ONLY), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
 								   $(foreach P, $(PATIENTS_REL2), exome-coverage/$PR2.coverage.bedtools.txt) \
+								   $(foreach P, $(PATIENTS_REL3), exome-coverage/$PR3.coverage.bedtools.txt) \
                					   ~/p2ry8-crlf2/scripts/plot-coverage.R
 	Rscript ~/p2ry8-crlf2/scripts/plot-coverage.R
 
@@ -259,10 +260,10 @@ exome-coverage/%.coverage.bedtools.txt: ~/p2ry8-crlf2/data/bam/variant_calling_p
 #-------------
 # final lists
 #-------------
-#					   $(foreach P, $(PATIENTS_REL3), filtered-variants/$P_rem_rel3.filtered.tsv)
 filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv filtered-variants/$P_rem_rel.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_DIA_ONLY), filtered-variants/$P_rem_dia.filtered.tsv) \
 					   $(foreach P, $(PATIENTS_REL2), filtered-variants/$P_rem_rel2.filtered.tsv) \
+					   $(foreach P, $(PATIENTS_REL3), filtered-variants/$P_rem_rel3.filtered.tsv) \
 					   ~/p2ry8-crlf2/scripts/filter-variants.pl 
 	perl ~/p2ry8-crlf2/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
 	cat filtered-variants/*.filtered.tsv >> $@.part

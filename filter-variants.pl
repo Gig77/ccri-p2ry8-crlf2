@@ -100,10 +100,14 @@ croak "ERROR: --evs-file not specified" if (!$evs_file);
 #-----------------------------------------------------------------------
 
 my %patient2sample = (
-	'108_rem' => '108C',					'108_dia' => '108D',					'108_rel' => '108R1',	'108_rel2' => '108R2',
-	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',	'737_rel2' => '737R2',
+	'108_rem' => '108C',					'108_dia' => '108D',					'108_rel' => '108R1',			'108_rel2' => '108R2',
+	'715_rem' => '715_Remission',			'715_dia' => '715_Diagnosis',			'715_rel' => '715_Relapse',		'715_rel3' => '715R3',
+	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',			'737_rel2' => '737R2',
 
 	'92_rem' => '92C',						'92_dia' => '92D',						'92_rel' => '92R',
+	'460_rem' => '460_Remission',			'460_dia' => '460_Diagnosis',			'460_rel' => '460_Relapse',
+	'545_rem' => '545_Remission',			'545_dia' => '545_Diagnosis',			'545_rel' => '545_Relapse',
+	'564_rem' => '564_Remission',			'564_dia' => '564_Diagnosis',			'564_rel' => '564_Relapse',
 	'839_rem' => '839C',					'839_dia' => '839D',					'839_rel' => '839R',
 	'B36_rem' => 'B36C',					'B36_dia' => 'B36D',					'B36_rel' => 'B36R',
 	'BB16_rem' => 'BB16C',					'BB16_dia' => 'BB16D',					'BB16_rel' => 'BB16R',
@@ -149,6 +153,10 @@ my %patient2sample = (
 my %patient2cohort = (
 	'108' => 'relapsing', 
 	'92' => 'relapsing', 
+	'460' => 'relapsing', 
+	'545' => 'relapsing', 
+	'564' => 'relapsing', 
+	'715' => 'relapsing', 
 	'737' => 'relapsing', 
 	'839' => 'relapsing', 
 	'B36' => 'relapsing', 

@@ -7,6 +7,7 @@ t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 t$sample[t$sample=="rem_dia"] <- "dia"
 t$sample[t$sample=="rem_rel"] <- "rel"
 t$sample[t$sample=="rem_rel2"] <- "rel2"
+t$sample[t$sample=="rem_rel3"] <- "rel3"
 
 # determine relapsing patients for which we have both diagnosis and relapse samples
 patients.relapsing <- unique(t$patient[t$sample=="dia"])[unique(t$patient[t$sample=="dia"]) %in% unique(t$patient[t$sample=="rel"])]

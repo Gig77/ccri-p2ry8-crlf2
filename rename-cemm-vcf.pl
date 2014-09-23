@@ -10,7 +10,7 @@ while (my $file = readdir(DIR)) {
 	next unless (-f "$dir/$file");
 
 	# Use a regular expression to find files
-	if ($file =~ /variant_calling_somatic_(.+)__(.+)_annotated.vcf$/)
+	if ($file =~ /variant_calling_somatic_(.+)__(.+)_(snpeff|annotated).vcf$/)
 	{
 		my ($s1, $s2) = ($1, $2);
 		print "$s1 $s2\n";
@@ -63,6 +63,10 @@ while (my $file = readdir(DIR)) {
 		elsif ($s1 =~ /^.+(C|_Remission)$/ and $s2 =~ /^(.+)R2$/)
 		{
 			$target = "/home/STANNANET/christian.frech/p2ry8-crlf2/data/mutect/$1_rem_rel2.somatic.vcf";
+		}
+		elsif ($s1 =~ /^.+(C|_Remission)$/ and $s2 =~ /^(.+)R3$/)
+		{
+			$target = "/home/STANNANET/christian.frech/p2ry8-crlf2/data/mutect/$1_rem_rel3.somatic.vcf";
 		}
 		else
 		{
