@@ -25,6 +25,7 @@ counts.bg.RData: counts.RData ~/generic/scripts/exomeCopy/calc-background.R
 allpatients.compiled-segments.exomeCopy.tsv: $(foreach P, $(PATIENTS_MATCHED), $PC.compiled-segments.tsv $PD.compiled-segments.tsv $PR.compiled-segments.tsv) \
 											 $(foreach P, $(PATIENTS_DIA_ONLY), $PC.compiled-segments.tsv $PD.compiled-segments.tsv) \
 											 $(foreach P, $(PATIENTS_REL2), $PR2.compiled-segments.tsv) \
+											 $(foreach P, $(PATIENTS_REL3), $PR3.compiled-segments.tsv) \
 											 ~/generic/scripts/exomeCopy/merge-cnvs.R
 	Rscript ~/generic/scripts/exomeCopy/merge-cnvs.R
 	mv $@.part $@

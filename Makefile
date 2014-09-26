@@ -115,6 +115,7 @@ coverage-region: coverage-region/allpatients.PAR1-X-60001-2699520.pdf \
 		  coverage-region/allpatients.RUNX1-21-34971197-38263248.pdf \
 		  coverage-region/allpatients.VPREB1-22-21866719-24317257.pdf \
 		  coverage-region/allpatients.ERG-21-38349519-41562975.pdf \
+		  coverage-region/allpatients.ERG_highres-21-39739183-40033618.pdf \
 		  coverage-region/allpatients.TP53-17-7440139-7721205.pdf \
 		  coverage-region/allpatients.RB1-13-46907242-51051394.pdf \
 		  coverage-region/allpatients.CDKN2AandB-9-20309360-23721195.pdf \
