@@ -8,8 +8,8 @@ min.cov.rem <- 10
 
 option_list <- list(
 		make_option("--patient", type="character", help="patient ID"),
-		make_option("--diagnosis", type="character", help="diagnosis coverage data file"),
-		make_option("--relapse", type="character", help="relapse coverage data file"),
+		make_option("--sample1", type="character", help="sample 1 coverage data file (diagnosis)"),
+		make_option("--sample2", type="character", help="sample 2 coverage data file (relapse)"),
 		make_option("--remission", type="character", help="remission coverage data file"),
 		make_option("--output", type="character", help="PDF output file"),
 		make_option("--region-name", type="character", help="region name to display"),
@@ -19,10 +19,10 @@ option_list <- list(
 		make_option("--display-end", type="character", help="end coordinate of region to display")
 		)
 opt <- parse_args(OptionParser(option_list=option_list))
-#opt <- data.frame(patient="Y", diagnosis="Y_dia.coverage.panel.tsv", relapse="Y_rel.coverage.panel.tsv", remission="Y_rem.coverage.panel.tsv", output="../region-coverage/patientY.IKZF2-2-211852462-217849831.pdf", 'region-name'="IKZF2", 'display-chrom'="chr2", 'display-start'=211852462, 'display-end'=217849831, stringsAsFactors=F, check.names=F)
+#opt <- data.frame(patient="Y", sample1="Y_dia.coverage.panel.tsv", sample2="Y_rel.coverage.panel.tsv", remission="Y_rem.coverage.panel.tsv", output="../region-coverage/patientY.IKZF2-2-211852462-217849831.pdf", 'region-name'="IKZF2", 'display-chrom'="chr2", 'display-start'=211852462, 'display-end'=217849831, stringsAsFactors=F, check.names=F)
 
 if (invalid(opt$patient)) stop("patient not specified")
-if (invalid(opt$diagnosis) && invalid(opt$relapse)) stop("diagnosis sample, relapse sample, or both need to be specified")
+if (invalid(opt$sample1) && invalid(opt$sample2)) stop("sample 1, sample 2, or both need to be specified")
 if (invalid(opt$remission)) stop("remission sample not specified")
 if (invalid(opt$output)) stop("output file not specified")
 if (invalid(opt$'region-name')) stop("region name not specified")
@@ -42,7 +42,7 @@ names(rem) <- c("chr", "start", "end", "name", "length", "strand", "total.rem", 
 avg.rem <- mean(rem$avg.rem)
 rem <- rem[rem$chr==region.chr & rem$start >= region.start & rem$end <= region.end,]
 
-dia <- read.delim(opt$diagnosis, check.names=F, stringsAsFactor=F, header=F)
+dia <- read.delim(opt$sample1, check.names=F, stringsAsFactor=F, header=F)
 names(dia) <- c("chr", "start", "end", "name", "length", "strand", "total.dia", "avg.dia")
 avg.dia <- mean(dia$avg.dia)
 dia <- dia[dia$chr==region.chr & dia$start >= region.start & dia$end <= region.end,]
@@ -55,8 +55,8 @@ CNA.smoothed.dia <- smooth.CNA(CNA.object.dia)
 #segs <- segment(CNA.smoothed, alpha = 0.01, verbose=0, min.width=2, undo.splits="sdundo", undo.SD=3)
 segs.dia <- segment(CNA.smoothed.dia, alpha = 0.01, verbose=0, min.width=2)
 
-if (!invalid(opt$relapse)) {
-	rel <- read.delim(opt$relapse, check.names=F, stringsAsFactor=F, header=F)
+if (!invalid(opt$sample2)) {
+	rel <- read.delim(opt$sample2, check.names=F, stringsAsFactor=F, header=F)
 	names(rel) <- c("chr", "start", "end", "name", "length", "strand", "total.rel", "avg.rel")
 	avg.rel <- mean(rel$avg.rel)
 	rel <- rel[rel$chr==region.chr & rel$start >= region.start & rel$end <= region.end,]
@@ -88,17 +88,19 @@ mn <- m
 #mn$avg.dia <- mn$avg.dia / median(mn[mn$chr=="chr19", "avg.dia"]) * median(mn[mn$chr=="chr19", "avg.rem"])
 #mn$avg.rel <- mn$avg.rel / median(mn[mn$chr=="chr19", "avg.rel"]) * median(mn[mn$chr=="chr19", "avg.rem"])
 
-# plot pseudoautosomal region 1 (PAR1)
+# plot region
 pdf(opt$output, height=8)
 par(mfrow=c(2,1), mar=c(4.5,4,3,2))
-plot(mn$start, mn$ratio.dia, ylim=c(-2, 2), xlim=c(region.start,region.end), col=rgb(0,0,0,1), main=paste(opt$patient, opt$'region-name', "dia"), ylab="log2 cov ratio", xlab=paste0(region.chr, ":", region.start, "-", region.end), cex=0.5)
+timepoint <- sub(paste0(".*", opt$patient, "([^\\.]+).*"), "\\1", opt$sample1)
+plot(mn$start, mn$ratio.dia, ylim=c(-2, 2), xlim=c(region.start,region.end), col=rgb(0,0,0,1), main=paste(opt$patient, opt$'region-name', timepoint), ylab="log2 cov ratio", xlab=paste0(region.chr, ":", region.start, "-", region.end), cex=0.5)
 for(i in 1:length(segs.dia$output$loc.start)) {
 	lines(c(segs.dia$output$loc.start[i], segs.dia$output$loc.end[i]),c(segs.dia$output$seg.mean[i],segs.dia$output$seg.mean[i]),type="l", col="orange", lty=1, lwd=3)
 }
 text(x=(genes$start+genes$end)/2, y=rep(c(-1.8, -1.95), length(genes$start)/2), labels=genes$gene, cex=0.6)
 
-if (!invalid(opt$relapse)) {
-	plot(mn$start, mn$ratio.rel, ylim=c(-2, 2), xlim=c(region.start,region.end), col=rgb(0,0,0,1), main=paste(opt$patient, opt$'region-name', "rel"), ylab="log2 cov ratio", xlab=paste0(region.chr, ":", region.start, "-", region.end), cex=0.5)
+if (!invalid(opt$sample2)) {
+	timepoint <- sub(paste0(".*", opt$patient, "([^\\.]+).*"), "\\1", opt$sample2)
+	plot(mn$start, mn$ratio.rel, ylim=c(-2, 2), xlim=c(region.start,region.end), col=rgb(0,0,0,1), main=paste(opt$patient, opt$'region-name', timepoint), ylab="log2 cov ratio", xlab=paste0(region.chr, ":", region.start, "-", region.end), cex=0.5)
 	for(i in 1:length(segs.rel$output$loc.start)) {
 		lines(c(segs.rel$output$loc.start[i], segs.rel$output$loc.end[i]),c(segs.rel$output$seg.mean[i],segs.rel$output$seg.mean[i]),type="l", col="orange", lty=1, lwd=3)
 	}

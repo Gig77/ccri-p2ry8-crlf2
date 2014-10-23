@@ -5,9 +5,9 @@ library(GenomicRanges)
 #region <- "CDKN2AB"; chr <- "chr9"; start <- 21600000; end <- 22400000
 #region <- "PAR1"; chr <- "chrX"; start <- 1000000; end <- 2000000
 #region <- "PAX5"; chr <- "chr9"; start <- 36495626; end <- 37377382
-#region <- "GABRB3"; chr <- "chr15"; start <- 25870574; end <- 27936343
+region <- "GABRB3"; chr <- "chr15"; start <- 25870574; end <- 27936343
 #region <- "ACSM2A"; chr <- "chr16"; start <- 20318327; end <- 20643523
-region <- "BTG1"; chr <- "chr12"; start <- 91278699; end <- 92889529
+#region <- "BTG1"; chr <- "chr12"; start <- 91278699; end <- 92889529
 
 s <- read.delim("~/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
 gr <- GRanges(seqnames=paste0("chr", s$seqnames), ranges=IRanges(start=s$start, end=s$end), sample.name=s$sample.name, group=s$sample.name, copy.count=s$copy.count, log.odds=s$log.odds, nranges=s$nranges, targeted.bp=s$targeted.bp, genes=s$genes)

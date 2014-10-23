@@ -9,7 +9,6 @@ PATIENTS_TEST = 92
 PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
 PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 841 887 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
 PATIENTS_REL2 = 108 737
-PATIENTS_REL3 = 715
 
 all: circos/allpatients.relapse.circos.png circos/allpatients.diagnosis.circos.png
 
@@ -25,7 +24,6 @@ counts.bg.RData: counts.RData ~/generic/scripts/exomeCopy/calc-background.R
 allpatients.compiled-segments.exomeCopy.tsv: $(foreach P, $(PATIENTS_MATCHED), $PC.compiled-segments.tsv $PD.compiled-segments.tsv $PR.compiled-segments.tsv) \
 											 $(foreach P, $(PATIENTS_DIA_ONLY), $PC.compiled-segments.tsv $PD.compiled-segments.tsv) \
 											 $(foreach P, $(PATIENTS_REL2), $PR2.compiled-segments.tsv) \
-											 $(foreach P, $(PATIENTS_REL3), $PR3.compiled-segments.tsv) \
 											 ~/generic/scripts/exomeCopy/merge-cnvs.R
 	Rscript ~/generic/scripts/exomeCopy/merge-cnvs.R
 	mv $@.part $@

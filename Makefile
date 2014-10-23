@@ -143,7 +143,8 @@ coverage-region: coverage-region/allpatients.PAR1-X-60001-2699520.pdf \
 		  coverage-region/allpatients.ADD3-10-111062840-113085360.pdf \
 		  coverage-region/allpatients.ATP10A-15-24452756-27861838.pdf \
 		  coverage-region/allpatients.NUP214-9-133609878-134537138.pdf \
-		  coverage-region/allpatients.BTG1-12-91300000-93550000.pdf
+		  coverage-region/allpatients.BTG1-12-91300000-93550000.pdf \
+		  coverage-region/allpatients.GABRB3-15-25870574-27936343.pdf
 		  
 coverage-region/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
 	~/tools/samtools-0.1.19/samtools depth \
@@ -155,11 +156,11 @@ coverage-region/%.exon-coverage.tsv: ~/p2ry8-crlf2/data/bam/variant_calling_proc
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
-coverage-region/patient%.pdf: coverage-region/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))R.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
+coverage-region/patient%.matched.pdf: coverage-region/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))R.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
 	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
 		--patient $(word 1, $(subst ., , $*)) \
-		--diagnosis $(word 1,$^) \
-		--relapse $(word 2,$^) \
+		--sample1 $(word 1,$^) \
+		--sample2 $(word 2,$^) \
 		--remission $(word 3,$^) \
 		--output $@.part \
 		--region-name $(word 1, $(subst -, , $(word 2, $(subst ., , $*)))) \
@@ -172,7 +173,7 @@ coverage-region/patient%.pdf: coverage-region/$$(word 1, $$(subst ., , %))D.exon
 coverage-region/patient%.diaonly.pdf: coverage-region/$$(word 1, $$(subst ., , %))D.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
 	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
 		--patient $(word 1, $(subst ., , $*)) \
-		--diagnosis $(word 1,$^) \
+		--sample1 $(word 1,$^) \
 		--remission $(word 2,$^) \
 		--output $@.part \
 		--region-name $(word 1, $(subst -, , $(word 2, $(subst ., , $*)))) \
@@ -182,7 +183,20 @@ coverage-region/patient%.diaonly.pdf: coverage-region/$$(word 1, $$(subst ., , %
 		$(if $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),--display-genes $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),)
 	mv $@.part $@
 
-coverage-region/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-region/patient$P.%.pdf) $(foreach P, $(PATIENTS_DIA_ONLY), coverage-region/patient$P.%.diaonly.pdf)
+coverage-region/patient%.rel2.pdf: coverage-region/$$(word 1, $$(subst ., , %))R2.exon-coverage.tsv coverage-region/$$(word 1, $$(subst ., , %))C.exon-coverage.tsv ~/p2ry8-crlf2/scripts/cov-plot-region.R
+	Rscript ~/p2ry8-crlf2/scripts/cov-plot-region.R \
+		--patient $(word 1, $(subst ., , $*)) \
+		--sample1 $(word 1,$^) \
+		--remission $(word 2,$^) \
+		--output $@.part \
+		--region-name $(word 1, $(subst -, , $(word 2, $(subst ., , $*)))) \
+		--display-chrom $(word 2, $(subst -, , $*)) \
+		--display-start $(word 3, $(subst -, , $*)) \
+		--display-end $(word 4, $(subst -, , $*)) \
+		$(if $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),--display-genes $(GENES_$(word 1, $(subst -, , $(word 2, $(subst ., , $*))))),)
+	mv $@.part $@
+
+coverage-region/allpatients.%.pdf: $(foreach P, $(PATIENTS_MATCHED), coverage-region/patient$P.%.matched.pdf) $(foreach P, $(PATIENTS_DIA_ONLY), coverage-region/patient$P.%.diaonly.pdf) $(foreach P, $(PATIENTS_REL2), coverage-region/patient$P.%.rel2.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
@@ -341,7 +355,7 @@ pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsiz
 				   $(foreach P, $(PATIENTS_DIA_ONLY), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out) \
 		           $(foreach P, $(PATIENTS_REL2), picard/$PR2.picard.insertsize.out) \
 		           $(foreach P, $(PATIENTS_REL3), picard/$PR3.picard.insertsize.out)
-	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/home/STANNANET/christian.frech/p2ry8-crlf2/data/bam/$$1.duplicate_marked.realigned.recalibrated.bam\t$$2\t$$1\n"; }' > $@.part 
+	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/home/STANNANET/christian.frech/p2ry8-crlf2/data/bam/variant_calling_process_sample_$$1_realigned.bam\t$$2\t$$1\n"; }' > $@.part 
 	mv $@.part $@ 
 
 .PHONY: pindel
@@ -355,7 +369,9 @@ pindel/allsamples_D pindel/allsamples_SI pindel/allsamples_LI pindel/allsamples_
 		--report_long_insertions true \
 		--NormalSamples true \
 		--minimum_support_for_event 10 \
-		--number_of_threads 20
+		--number_of_threads 10 \
+		--max_range_index 2 \
+		--window_size 1
 
 pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D.vcf pindel/allsamples_SI.vcf pindel/allsamples_LI.vcf pindel/allsamples_TD.vcf ~/p2ry8-crlf2/scripts/filter-pindel.pl
 	~/tools/vcftools_0.1.10/bin/vcf-concat \
