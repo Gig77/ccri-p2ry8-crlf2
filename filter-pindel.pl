@@ -20,17 +20,31 @@ GetOptions
 croak "ERROR: --vcf-in not specified" if (!$vcf_in);
 
 my %rem_samples = (
-	'839C' => 1,
+	'108C' => 1,
 	'92C' => 1,
+	'460C' => 1,
+	'545C' => 1,
+	'564C' => 1,
+	'715C' => 1,
+	'737C' => 1,
+	'839C' => 1,
 	'B36C' => 1,
 	'BB16C' => 1,
+	'DL2C' => 1,
+	'GI8C' => 1,
 	'GI13C' => 1,
 	'HV57C' => 1,
 	'HV80C' => 1,
 	'LU3C' => 1,
+	'MA5C' => 1,
 	'N7C' => 1,
 	'S23C' => 1,
 	'SN18C' => 1,
+	'DS10898C' => 1,
+	'VS14645C' => 1,
+	'SE15285C' => 1,
+	'BJ17183C' => 1,
+	'KE17247C' => 1,
 	'242C' => 1,
 	'360C' => 1,
 	'365C' => 1,
@@ -38,10 +52,20 @@ my %rem_samples = (
 	'400C' => 1,
 	'506C' => 1,
 	'769C' => 1,
+	'802C' => 1,
 	'833C' => 1,
+	'887C' => 1,
+	'841C' => 1,
+	'903C' => 1,
 	'948C' => 1,
-	'737C' => 1,
-	'108C' => 1
+	'957C' => 1,
+	'961C' => 1,
+	'1060C' => 1,
+	'1066C' => 1,
+	'1089C' => 1,
+	'HW11537C' => 1,
+	'KT14158C' => 1,
+	'TL14516C' => 1
 );
 
 
@@ -54,9 +78,8 @@ $vcf->parse_header();
 
 my (@samples) = $vcf->get_samples();
 
-# copy header
-my $cmd = "grep -P '^#' $vcf_in";
-system($cmd) == 0 or die "ERROR: grep vcf header failed: $cmd\n";
+# copy header to stdout
+print $vcf->format_header();
 
 my %variants;
 while (my $line = $vcf->next_line())

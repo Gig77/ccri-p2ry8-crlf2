@@ -79,8 +79,8 @@ ikzf3.del.rel <- c("")
 cdkn2a.del.dia <- c("1060", "360", "379", "400", "506", "564", "737", "769", "887", "957", "B36", "BB16", "LU3", "S23", "SN18", "14197", "6603", "7118", "11536", "7361", "13906")
 cdkn2a.del.rel <- c("108", "545", "564", "737", "B36", "BB16", "GI8", "HV80", "SE15285", "SN18")
 
-pax5.del.dia <- c("1060", "365", "379", "400", "545", "564", "737", "833", "948", "957", "BJ17183", "HV80", "KT14158", "5755", "7839", "6603", "7361") 
-pax5.del.rel <- c("545", "564", "737", "DL2", "HV80", "N7")
+pax5.del.dia <- c("1060", "365", "379", "400", "545", "564", "737", "833", "948", "957", "BJ17183", "HV80", "KT14158", "5755", "7839", "6603", "7361", "903") 
+pax5.del.rel <- c("545", "564", "737", "DL2", "HV80", "N7", "VS14645")
 
 ebf1.del.dia <- c("839")
 ebf1.del.rel <- c("839")
@@ -94,7 +94,7 @@ setd2.del.rel <- c("VS14645", "DS10898")
 p2ry8.sub <- c("545", "460", "564", "SN18", "LU3", "957")
 p2ry8.cons <- c("DL2", "108", "GI8", "HV80", "N7", "DS10898", "VS14645", "BB16", "SE15285", "715", "839")
 
-chr21.gain <- c("108", "DL2", "N7", "DS10898", "SE15285", "GI13", "HV57", "737", "841", "365", "903", "400", "HW11537", "TL14516", "887", "769", "506", "1089", "802", "715", "545", "460", "1066", "961", "GI8", "1060", "VS14645", "360", "564", "5755", "7839", "13906", "4558")
+chr21.gain <- c("108", "DL2", "N7", "DS10898", "SE15285", "GI13", "HV57", "737", "841", "365", "903", "400", "HW11537", "TL14516", "887", "769", "506", "1089", "802", "715", "545", "460", "1066", "961", "GI8", "1060", "VS14645", "360", "564", "5755", "7839", "13906", "4558", "957")
 
 sex.chr.abnorm <- c("108", "HV80", "SE15285", "715", "B36", "1060", "BJ17183", "545", "564", "841", "903", "TL14516", "887", "1066", "506", "961", "14197")
 
@@ -169,6 +169,13 @@ c$pax5.relapsing.rel <- ifelse(c$patient_id %in% patients.relapsing.matched, c$p
 c$pax5.relapsing.rel[c$patient %in% c("GI8")] <- NA
 c$pax5.relapsing <- c$pax5.relapsing.dia | c$pax5.relapsing.rel
 
+c$ikzf1.plus <- c$ikzf1 & (c$cdkn2a | c$pax5)
+c$ikzf1.plus.dia <- c$ikzf1.dia & (c$cdkn2a.dia | c$pax5.dia)
+c$ikzf1.plus.relapsing.dia <- c$ikzf1.relapsing.dia & (c$cdkn2a.relapsing.dia | c$pax5.relapsing.dia)
+c$ikzf1.plus.relapsing.rel <- c$ikzf1.relapsing.rel & (c$cdkn2a.relapsing.rel | c$pax5.relapsing.rel)
+c$ikzf1.plus.relapsing <- c$ikzf1.relapsing & (c$cdkn2a.relapsing | c$pax5.relapsing)
+
+		
 c$p2ry8.conserved <- ifelse(c$patient_id %in% patients.relapsing.matched, c$patient_id %in% p2ry8.cons, NA)
 
 c$chr21.gain.not.iamp  <- c$patient_id %in% chr21.gain
@@ -194,6 +201,7 @@ tests <- test_pairwise_assoc(c,
 						   c("cdkn2a", "cdkn2a.dia", "cdkn2a.relapsing.dia", "cdkn2a.relapsing.rel", "cdkn2a.relapsing"),
 						   c("epigenetic", "epigenetic.dia", "epigenetic.relapsing.dia", "epigenetic.relapsing.rel", "epigenetic.relapsing"),
 						   c("pax5", "pax5.dia", "pax5.relapsing.dia", "pax5.relapsing.rel", "pax5.relapsing", "lymphoid_devel", "lymphoid_devel.dia", "lymphoid_devel.relapsing.dia", "lymphoid_devel.relapsing.rel", "lymphoid_devel.relapsing"),
+						   c("ikzf1.plus", "ikzf1.plus.dia", "ikzf1.plus.relapsing.dia", "ikzf1.plus.relapsing.rel", "ikzf1.plus.relapsing", "ikzf1", "ikzf1.dia", "ikzf1.relapsing.dia", "ikzf1.relapsing.rel", "ikzf1.relapsing", "cdkn2a", "cdkn2a.dia", "cdkn2a.relapsing.dia", "cdkn2a.relapsing.rel", "cdkn2a.relapsing", "pax5", "pax5.dia", "pax5.relapsing.dia", "pax5.relapsing.rel", "pax5.relapsing", "lymphoid_devel", "lymphoid_devel.dia", "lymphoid_devel.relapsing.dia", "lymphoid_devel.relapsing.rel", "lymphoid_devel.relapsing"),
 						   c("chr21.gain.not.iamp", "chr21.gain.or.iamp", "iAMP21", "chr21.gain.or.iamp.somatic"),
 						   c("chr21.gain.not.iamp", "chr21.gain.or.iamp", "chr21.gain.or.iamp.somatic", "DS"),
 						   c("kras.relapsing.rel", "epigenetic"))

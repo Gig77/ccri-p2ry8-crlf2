@@ -351,6 +351,9 @@ picard/%.picard.insertsize.out: ~/p2ry8-crlf2/data/bam/variant_calling_process_s
 # PINDEL
 #---------------
 
+.PHONY: pindel
+pindel: $(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_D)
+
 pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out picard/$PR.picard.insertsize.out) \
 				   $(foreach P, $(PATIENTS_DIA_ONLY), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out) \
 		           $(foreach P, $(PATIENTS_REL2), picard/$PR2.picard.insertsize.out) \
@@ -358,38 +361,47 @@ pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsiz
 	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/home/STANNANET/christian.frech/p2ry8-crlf2/data/bam/variant_calling_process_sample_$$1_realigned.bam\t$$2\t$$1\n"; }' > $@.part 
 	mv $@.part $@ 
 
-.PHONY: pindel
-pindel: pindel/allsamples.pindel.tsv
+#pindel/pindel.cfg: $(foreach P, 108, picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out picard/$PR.picard.insertsize.out)
+#	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/home/STANNANET/christian.frech/p2ry8-crlf2/data/bam/variant_calling_process_sample_$$1_realigned.bam\t$$2\t$$1\n"; }' > $@.part 
+#	mv $@.part $@ 
 
-pindel/allsamples_D pindel/allsamples_SI pindel/allsamples_LI pindel/allsamples_TD: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
+pindel/chr%_D: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel ~/generic/data/broad/hs37d5.fa
 	~/tools/pindel-0.2.4w/pindel \
 		--fasta ~/generic/data/broad/hs37d5.fa \
 		--config-file pindel/pindel.cfg \
-		--output-prefix pindel/allsamples \
+		--chromosome $* \
+		--output-prefix pindel/chr$* \
 		--report_long_insertions true \
 		--NormalSamples true \
 		--minimum_support_for_event 10 \
 		--number_of_threads 10 \
-		--max_range_index 2 \
-		--window_size 1
+		--max_range_index 4 \
+		--report_interchromosomal_events false \
+		--report_duplications false \
+		--report_inversions false \
+		--exclude ~/p2ry8-crlf2/scripts/pindel-exclude-regions.bed \
+		--window_size 3 \
+		2>&1 | $(LOG)
 
-pindel/allsamples.combined.filtered.vcf: pindel/allsamples_D.vcf pindel/allsamples_SI.vcf pindel/allsamples_LI.vcf pindel/allsamples_TD.vcf ~/p2ry8-crlf2/scripts/filter-pindel.pl
+# HACK; see http://stackoverflow.com/questions/19822435/multiple-targets-from-one-recipe-and-parallel-execution why this two-step process is necessary for explicit multiple target rules
+pindel/allsamples_SI pindel/allsamples_LI pindel/allsamples_TD: pindel/allsamples_D
+
+pindel/allsamples.combined.filtered.vcf: $(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_D.vcf pindel/chr$C_SI.vcf) ~/p2ry8-crlf2/scripts/filter-pindel.pl
 	~/tools/vcftools_0.1.10/bin/vcf-concat \
-		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_D.vcf) \
-		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_SI.vcf) \
-		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_LI.vcf) \
-		<(perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in pindel/allsamples_TD.vcf) \
-		| ~/tools/vcftools_0.1.10/bin/vcf-sort > $@.part
+		$(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_D.vcf) \
+		$(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_SI.vcf) \
+	| perl ~/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in /dev/stdin \
+	| ~/tools/vcftools_0.1.10/bin/vcf-sort > $@.part
 	mv $@.part $@
-	
+
 pindel/%.vcf: pindel/%
 	~/tools/pindel-0.2.4w/pindel2vcf -p $< -r ~/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v $@.part
 	mv $@.part $@
 
-pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf
+pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf ~/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar annotate \
-		-v ~/generic/data/ncbi/common_no_known_medical_impact_20130930.chr.vcf \
+	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar annotate \
+		-v ~/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf \
 		<(cat ~/p2ry8-crlf2/results/$< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
 	test -s $@.part
@@ -397,12 +409,14 @@ pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filter
 
 pindel/allsamples.combined.filtered.dbsnp.snpeff.vcf: pindel/allsamples.combined.filtered.dbsnp.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -Xmx2g -jar snpEff.jar -v -lof hg19 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	(cd ~/tools/snpEff-3.6; java -Xmx4g -jar snpEff.jar -v -lof GRCh37.75 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
 
 pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf: pindel/allsamples.combined.filtered.dbsnp.snpeff.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.3h; java -jar SnpSift.jar dbnsfp -v ~/generic/data/dbNSFP-2.1/dbNSFP2.1.txt $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar dbnsfp -v ~/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz -collapse \
+		-f SIFT_pred,SIFT_score,Polyphen2_HVAR_pred,Polyphen2_HVAR_score,SiPhy_29way_logOdds,LRT_pred,LRT_score,MutationTaster_pred,MutationTaster_score,MutationAssessor_pred,MutationAssessor_score,FATHMM_pred,FATHMM_score,RadialSVM_pred,RadialSVM_score,GERP++_RS,1000Gp1_AF,1000Gp1_AFR_AF,1000Gp1_EUR_AF,1000Gp1_AMR_AF,1000Gp1_ASN_AF,ESP6500_AA_AF,ESP6500_EA_AF,Uniprot_acc,Interpro_domain, \
+		$(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
 
 pindel/allsamples.pindel.tsv: pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf ~/p2ry8-crlf2/scripts/pindel-vcf-to-tsv.pl
