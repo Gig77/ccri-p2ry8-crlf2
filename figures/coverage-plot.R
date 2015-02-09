@@ -31,7 +31,7 @@ cols <- rainbow(length(cov))
 ltypes <- rep(1:6,length.out=length(cov))
 
 # Save the graph to a file
-png("~/p2ry8-crlf2/results/exome-coverage/coverage-plots-exome.png", h=2000, w=2700, pointsize=40)
+png("~/p2ry8-crlf2/results/figures/coverage.png", h=2000, w=2700, pointsize=40)
 
 # Create plot area, but do not plot anything. Add gridlines and axis labels.
 layout(matrix(c(1,2), nrow = 1), widths = c(0.7, 0.3))

@@ -38,7 +38,7 @@ mut$rel <- ifelse(is.na(mut$conserved), NA, mut$'relapse-specific' + mut$conserv
 
 # plot
 make_plot <- function() {
-	par(mfrow=c(2,2), mar=c(6,5,1,1))
+	par(mfrow=c(2,2), mar=c(7,5,1,1))
 	
 	# boxplot (include outliers)
 	boxplot(mut$dia, mut$rel, xlab="", ylab="# non-silent mutations", na.action=na.exclude, outline=F, cex.axis=1.5, xaxt="n", cex.lab=1.5, ylim=c(0,max(c(mut$dia, mut$rel), na.rm=T)))

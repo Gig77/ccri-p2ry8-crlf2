@@ -2,13 +2,13 @@ export SHELLOPTS:=errexit:pipefail
 SHELL=/bin/bash  # required to make pipefail work
 
 LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S ", localtime), $$ARGV[0], "$@: $$_";'
-DATA=/data/christian/p2ry8-crlf2/data/current
+DATA=/data2/christian.frech/p2ry8-crlf2/data/current
 
 PATIENTS_TEST = 92
-PATIENTS_MATCHED = 108 839 92 B36 BB16 GI13 HV57 HV80 LU3 N7 S23 SN18 737
+PATIENTS_MATCHED = 108 839 92 B36 BB16 GI13 HV57 HV80 LU3 N7 S23 SN18 737 AL9890 GL11356
 PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 833 948
 PATIENTS_REL2 = 108 737 
-PATIENTS_REL3 = 715 
+PATIENTS_REL3 = 715 737
 
 WIGFILES=$(foreach P, $(PATIENTS_MATCHED), $(DATA)/wig/$PD.wig $(DATA)/wig/$PC.wig $(DATA)/wig/$PR.wig) $(foreach P, $(PATIENTS_DIA_ONLY), $(DATA)/wig/$PD.wig $(DATA)/wig/$PC.wig) $(foreach P, $(PATIENTS_REL2), $(DATA)/wig/$PR2.wig) $(foreach P, $(PATIENTS_REL3), $(DATA)/wig/$PR3.wig)
 
@@ -41,7 +41,7 @@ maf/relapsing.rel.maf: $(foreach P, $(PATIENTS_MATCHED), maf/$P_rem_rel.maf)
 	cat $^ >> $@.part
 	mv $@.part $@
 
-maf/%.maf: ../filtered_variants/%.dbsnp.snpeff.dbNSFP.filtered.vcf ../filtered_variants/%.indel.dbsnp.snpeff.dbNSFP.filtered.vcf ucsc-genes.g1k_v37.roi.gz ucsc-genes.g1k_v37.roi.gz.tbi ~/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl
+maf/%.maf: ../filtered-variants/%.filtered.vcf ucsc-genes.g1k_v37.roi.gz ucsc-genes.g1k_v37.roi.gz.tbi ~/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl
 	mkdir -p maf
 	cat $(word 1,$^) | perl ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl \
 		--sample-tumor $(shell echo $* | perl -ne 's/_rem_dia/D/; s/_rem_rel/R/; print $$_;') \
@@ -51,29 +51,25 @@ maf/%.maf: ../filtered_variants/%.dbsnp.snpeff.dbNSFP.filtered.vcf ../filtered_v
 		--min-af 0.20 \
 		--deleterious \
 		2>&1 1>$@.part | grep -vP '(Leading or trailing space|variant.Format|Domain annotations come from)'
-	cat $(word 2,$^) | perl ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl \
-		--sample-tumor $(shell echo $* | perl -ne 's/_rem_dia/D/; s/_rem_rel/R/; print $$_;') \
-		--sample-normal $(shell echo $* | perl -ne 's/_rem_dia/C/; s/_rem_rel/C/; print $$_;') \
-		--music-roi ucsc-genes.g1k_v37.roi.gz \
-		--mapping-entrez ~/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv \
-		--min-af 0.20 \
-		--deleterious \
-		2>&1 1>>$@.part | grep -vP '(Leading or trailing space|variant.Format|Domain annotations come from)'
 	mv $@.part $@
 
-$(DATA)/wig/%.wig: $(DATA)/bam/%.duplicate_marked.realigned.recalibrated.bam ~/generic/data/broad/human_g1k_v37.chromsizes.tsv 
+$(DATA)/wig/%.wig: $(DATA)/bam/variant_calling_process_sample_%_realigned.bam ~/generic/data/broad/human_g1k_v37.chromsizes.tsv
+	mkdir -p $(DATA)/wig
 	~/tools/bedtools-2.17.0/bin/genomeCoverageBed -bg -ibam $< -g ~/generic/data/broad/human_g1k_v37.chromsizes.tsv \
 		| perl /home/STANNANET/christian.frech/hdall/scripts/bedgraph-to-wig.pl /dev/stdin $@.part
 	mv $@.part $@
 
 #--- pathway analysis diagnosis
-	
-dia-relapsing/total_covgs: ucsc-genes.g1k_v37.roi
+
+dia-relapsing/wig-list.tsv: $(WIGFILES)
+	rm -f $@
+	for P in $(PATIENTS_MATCHED) ; do echo -e $$P"D\t$(DATA)/wig/"$$P"D.wig" >> $@.part ; done
+	mv $@.part $@
+
+dia-relapsing/total_covgs: ucsc-genes.g1k_v37.roi dia-relapsing/wig-list.tsv
 	rm -f dia-relapsing/total_covgs
 	rm -rf dia-relapsing/roi_covgs
 	rm -rf dia-relapsing/gene_covgs
-	rm -f dia-relapsing/wig-list.tsv
-	for P in $(PATIENTS_MATCHED) ; do echo -e $$P"D\t$(DATA)/wig/"$$P"D.wig" >> dia-relapsing/wig-list.tsv ; done
 	genome music bmr calc-wig-covg \
 		--wig-list dia-relapsing/wig-list.tsv \
 		--output-dir dia-relapsing/ \
@@ -117,12 +113,15 @@ pathscan/sm_pathways.dia-relapsing.annotated.tsv: pathscan/sm_pathways.dia-relap
 
 #--- pathway analysis relapse
 
-rel/total_covgs: ucsc-genes.g1k_v37.roi
+rel/wig-list.tsv: $(WIGFILES)
+	rm -f $@
+	for P in $(PATIENTS_MATCHED) ; do echo -e $$P"R\t$(DATA)/wig/"$$P"R.wig" >> $@.part ; done
+	mv $@.part $@
+
+rel/total_covgs: ucsc-genes.g1k_v37.roi rel/wig-list.tsv
 	rm -f rel/total_covgs
 	rm -rf rel/roi_covgs
 	rm -rf rel/gene_covgs
-	rm -f rel/wig-list.tsv
-	for P in $(PATIENTS_MATCHED) ; do echo -e $$P"R\t$(DATA)/wig/"$$P"R.wig" >> rel/wig-list.tsv ; done
 	genome music bmr calc-wig-covg \
 		--wig-list rel/wig-list.tsv \
 		--output-dir rel/ \

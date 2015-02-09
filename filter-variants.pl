@@ -101,12 +101,12 @@ croak "ERROR: --evs-file not specified" if (!$evs_file);
 
 my %patient2sample = (
 	'108_rem' => '108C',					'108_dia' => '108D',					'108_rel' => '108R1',			'108_rel2' => '108R2',
-	'715_rem' => '715_Remission',			'715_dia' => '715_Diagnosis',			'715_rel' => '715_Relapse',		'715_rel3' => '715R3',
-	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',			'737_rel2' => '737R2',
+	'715_rem' => '715_Remission',			'715_dia' => '715_Diagnosis',			'715_rel' => '715_Relapse',		'715_rel3' => '715R3',						'm1957-715-rel_xeno' => 'M1957_715_Relapse1',
+	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',			'737_rel2' => '737R2',						'737_rel3' => '737_Relapse3',
 
 	'92_rem' => '92C',						'92_dia' => '92D',						'92_rel' => '92R',
 	'460_rem' => '460_Remission',			'460_dia' => '460_Diagnosis',			'460_rel' => '460_Relapse',
-	'545_rem' => '545_Remission',			'545_dia' => '545_Diagnosis',			'545_rel' => '545_Relapse',
+	'545_rem' => '545_Remission',			'545_dia' => '545_Diagnosis',			'545_rel' => '545_Relapse',		'm1963-545-rel_xeno' => 'm1963_545_Relapse',		'm1964-545-rel_xeno' => 'm1964_545Rn_Relapse',
 	'564_rem' => '564_Remission',			'564_dia' => '564_Diagnosis',			'564_rel' => '564_Relapse',
 	'839_rem' => '839C',					'839_dia' => '839D',					'839_rel' => '839R',
 	'B36_rem' => 'B36C',					'B36_dia' => 'B36D',					'B36_rel' => 'B36R',
@@ -147,16 +147,21 @@ my %patient2sample = (
 	'1089_rem' => '1089_Remission',			'1089_dia' => '1089_Diagnosis',
 	'HW11537_rem' => 'HW11537_Remission',	'HW11537_dia' => 'HW11537_Diagnosis',
 	'KT14158_rem' => 'KT14158_Remission',	'KT14158_dia' => 'KT14158_Diagnosis',
-	'TL14516_rem' => 'TL14516_Remission',	'TL14516_dia' => 'TL14516_Diagnosis'
+	'TL14516_rem' => 'TL14516_Remission',	'TL14516_dia' => 'TL14516_Diagnosis',
+	'AL9890_rem' => 'AL9890_Remission',		'AL9890_dia' => 'AL9890_Diagnosis',		'AL9890_rel' => 'AL9890_Relapse',
+	'GL11356_rem' => 'GL11356_Remisson',	'GL11356_dia' => 'GL11356_Diagnosis',	'GL11356_rel' => 'GL11356_Relapse',
+	
+	'G_rem' => 'G_Remission',				'm1977-G-dia_xeno' => 'm1977_G_Dx_Diagnosis',
+	'Y_rem' => 'Y3767_Remission',			'm1967-Y-rel_xeno' => 'm1967_Y_Relapse'
 );
 
 my %patient2cohort = (
 	'108' => 'relapsing', 
 	'92' => 'relapsing', 
 	'460' => 'relapsing', 
-	'545' => 'relapsing', 
+	'545' => 'relapsing', 'm1963-545-rel_xeno' => 'relapsing', 'm1964-545-rel_xeno' => 'relapsing',
 	'564' => 'relapsing', 
-	'715' => 'relapsing', 
+	'715' => 'relapsing', 'm1957-715-rel_xeno' => 'relapsing', 
 	'737' => 'relapsing', 
 	'839' => 'relapsing', 
 	'B36' => 'relapsing', 
@@ -176,6 +181,8 @@ my %patient2cohort = (
 	'SE15285' => 'relapsing',
 	'BJ17183' => 'relapsing',
 	'KE17247' => 'relapsing',
+	'AL9890' => 'relapsing,',
+	'GL11356' => 'relapsing',
 	
 	'242' => 'non-relapsing',
 	'360' => 'non-relapsing',
@@ -197,13 +204,16 @@ my %patient2cohort = (
 	'1089' => 'non-relapsing',
 	'HW11537' => 'non-relapsing',
 	'KT14158' => 'non-relapsing',
-	'TL14516' => 'non-relapsing'
+	'TL14516' => 'non-relapsing',
+	
+	'm1977-G-dia' => 'HDALL',
+	'm1967-Y-rel' => 'HDALL'
 );
 
-my ($patient, $vcf_sample_id_rem, $vcf_sample_id_tum) = split("_", $sample_identifier) or croak "ERROR: could not parse sample identifier\n";
+my ($patient, $vcf_sample_id_rem, $vcf_sample_id_tum) = $sample_identifier =~ /([^_]+)_([^_]+)_(.*)/ or croak "ERROR: could not parse sample identifier\n";
 my $cmp_type = $vcf_sample_id_rem."_".$vcf_sample_id_tum;
 die "ERROR: could not determine cohort for patient $patient\n" if (!$patient2cohort{$patient});
-die "ERROR: invalid comparison type: $cmp_type\n" if ($cmp_type ne 'rem_dia' and $cmp_type ne 'rem_rel' and $cmp_type ne 'rem_rel1' and $cmp_type ne 'rem_rel2' and $cmp_type ne 'rem_rel3');
+die "ERROR: invalid comparison type: $cmp_type\n" if ($cmp_type !~ /^(rem_dia|rem_rel\d?|rem_xeno)$/);
 
 $vcf_sample_id_rem = $patient2sample{$patient."_$vcf_sample_id_rem"}; 
 $vcf_sample_id_tum = $patient2sample{$patient."_$vcf_sample_id_tum"}; 

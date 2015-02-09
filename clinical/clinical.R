@@ -7,7 +7,7 @@ source("~/p2ry8-crlf2/scripts/clinical/test_pairwise.R")
 
 set.seed(22)
 
-patients.relapsing.matched <- c("108", "92", "715", "737", "839", "B36", "BB16", "DL2", "GI8", "GI13", "HV57", "HV80", "N7", "S23", "DS10898", "VS14645", "SE15285", "KE17247")
+patients.relapsing.matched <- c("108", "92", "715", "737", "839", "B36", "BB16", "DL2", "GI8", "GI13", "HV57", "HV80", "N7", "S23", "DS10898", "VS14645", "SE15285", "KE17247", "AL9890", "GL11356")
 patients.relapsing.diaonly <- c("1060", "BJ17183")
 patients.relapsing <- c(patients.relapsing.matched, patients.relapsing.diaonly)
 patients.nonrelapsing.withmutdata <- c("242", "360", "365", "379", "400", "506", "769", "802", "833", "887", "841", "903", "948", "961", "1066", "1089", "HW11537", "KT14158", "TL14516")
@@ -16,7 +16,7 @@ patients.nonrelapsing <- c(patients.nonrelapsing.withmutdata, patients.nonrelaps
 patients <- c(patients.relapsing, patients.nonrelapsing)
 patients.excl <- c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957")
 
-c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v5.txt", strip.white=TRUE, na.strings=c("", "NA", "-", " -", " N.A.", "N.A", "N.A.", "N.A.?", "n/a", "n/d", "n.d.", " ", "early (CNS)"))
+c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v6.txt", strip.white=TRUE, na.strings=c("", "NA", "-", " -", " N.A.", "N.A", "N.A.", "N.A.?", "n/a", "n/d", "n.d.", " ", "early (CNS)"))
 
 #----
 # CLEAN UP DATA
@@ -29,6 +29,7 @@ sprintf("Patient not in clinical data sheet: %s", paste(patients[!patients %in% 
 sprintf("The following patient is in the clinical data but without mutation data: %s", paste(c$patient_id[!c$patient_id %in% c(patients, patients.excl)], sep=","))
 sprintf("Patient deliberately excluded from analysis: %s", paste(patients.excl, sep=","))
 c <- c[c$patient_id %in% patients,]
+c$cohort[c$cohort=="relapsing EM"] <- "relapsing"
 c$cohort <- as.factor(as.character(c$cohort))
 c$blasts_dia[c$blasts_dia=="73 pB"] <- 73
 c$blasts_dia <- as.numeric(as.character(c$blasts_dia))
@@ -37,6 +38,10 @@ c$mrd_risk_dia[c$mrd_risk_dia=="LR"] <- "SR"
 c$mrd_risk_dia <- as.factor(as.character(c$mrd_risk_dia))
 c$rel_timepoint[c$rel_timepoint=="very early"] <- "early"
 c$rel_timepoint <- as.factor(as.character(c$rel_timepoint))
+c$outcome_after.1st.rel[c$patient_id=="1060"] <- NA
+c$outcome_after.1st.rel <- as.factor(as.character(c$outcome_after.1st.rel))
+c$endpoint[c$patient_id=="1060"] <- NA
+c$second_rem_months[c$patient_id=="1060"] <- NA
 names(c)[names(c)=="blasts_rel..1st."] <- "blasts_rel"
 c$blasts_rel[c$blasts_rel=="isoliertes ZNS Rezidiv"] <- NA
 c$blasts_rel <- as.numeric(as.character(c$blasts_rel))
@@ -82,21 +87,21 @@ cdkn2a.del.rel <- c("108", "545", "564", "737", "B36", "BB16", "GI8", "HV80", "S
 pax5.del.dia <- c("1060", "365", "379", "400", "545", "564", "737", "833", "948", "957", "BJ17183", "HV80", "KT14158", "5755", "7839", "6603", "7361", "903") 
 pax5.del.rel <- c("545", "564", "737", "DL2", "HV80", "N7", "VS14645")
 
-ebf1.del.dia <- c("839")
-ebf1.del.rel <- c("839")
+ebf1.del.dia <- c("839", "GL11356")
+ebf1.del.rel <- c("839", "GL11356")
 
 etv6.del.dia <- c("N7", "242", "957", "11898", "14197")
 etv6.del.rel <- c("N7", "715", "GI13")
 
-setd2.del.dia <- c("903", "VS14645", "KE17247")
+setd2.del.dia <- c("903", "VS14645", "KE17247", "AL9890")
 setd2.del.rel <- c("VS14645", "DS10898")
 
 p2ry8.sub <- c("545", "460", "564", "SN18", "LU3", "957")
-p2ry8.cons <- c("DL2", "108", "GI8", "HV80", "N7", "DS10898", "VS14645", "BB16", "SE15285", "715", "839")
+p2ry8.cons <- c("DL2", "108", "GI8", "HV80", "N7", "DS10898", "VS14645", "BB16", "SE15285", "715", "839", "AL9890", "GL11356")
 
-chr21.gain <- c("108", "DL2", "N7", "DS10898", "SE15285", "GI13", "HV57", "737", "841", "365", "903", "400", "HW11537", "TL14516", "887", "769", "506", "1089", "802", "715", "545", "460", "1066", "961", "GI8", "1060", "VS14645", "360", "564", "5755", "7839", "13906", "4558", "957")
+chr21.gain <- c("108", "DL2", "N7", "DS10898", "SE15285", "GI13", "HV57", "737", "841", "365", "903", "400", "HW11537", "TL14516", "887", "769", "506", "1089", "802", "715", "545", "460", "1066", "961", "GI8", "1060", "VS14645", "360", "564", "5755", "7839", "13906", "4558", "957", "AL9890", "GL11356")
 
-sex.chr.abnorm <- c("108", "HV80", "SE15285", "715", "B36", "1060", "BJ17183", "545", "564", "841", "903", "TL14516", "887", "1066", "506", "961", "14197")
+sex.chr.abnorm <- c("108", "545", "564", "715", "B36", "HV80", "N7", "S23", "SE15285", "BJ17183", "AL9890", "506", "769", "887", "841", "903", "961", "1060", "1066", "TL14516", "14197")
 
 #----
 # ADD ATTRIBUTES TO CLINICAL TABLE

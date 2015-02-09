@@ -162,7 +162,7 @@ while(<>)
 	{
 		$genes{$gene}{'all'}{'cases'}{'dia'}{$patient} = 1; 
 	}
-	elsif ($sample eq "rem_rel" or $sample eq "rem_rel2")
+	elsif ($sample eq "rem_rel" or $sample eq "rem_rel2" or $sample eq "rem_rel3")
 	{
 		$genes{$gene}{'all'}{'cases'}{'rel'}{$patient} = 1; 
 	}
@@ -184,7 +184,7 @@ while(<>)
 		{
 			$genes{$gene}{'nonsyn'}{'cases'}{'dia'}{$patient} = 1; 
 		}
-		elsif ($sample eq "rem_rel" or $sample eq "rem_rel2")
+		elsif ($sample eq "rem_rel" or $sample eq "rem_rel2" or $sample eq "rem_rel3")
 		{
 			$genes{$gene}{'nonsyn'}{'cases'}{'rel'}{$patient} = 1; 
 		}
@@ -203,7 +203,7 @@ while(<>)
 		{
 			$genes{$gene}{'deleterious'}{'cases'}{'dia'}{$patient} = 1; 
 		}
-		elsif ($sample eq "rem_rel" or $sample eq "rem_rel2")
+		elsif ($sample eq "rem_rel" or $sample eq "rem_rel2" or $sample eq "rem_rel3")
 		{
 			$genes{$gene}{'deleterious'}{'cases'}{'rel'}{$patient} = 1; 
 		}

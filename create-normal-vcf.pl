@@ -17,8 +17,8 @@ $vcf->parse_header();
 my (@samples) = $vcf->get_samples();
 
 my $sample = $samples[0];
-$sample = $samples[1] if ($sample !~ /C$/ and $sample !~ /Remission$/);
-die "Not consitutional sample: $sample!\n" if ($sample !~ /C$/ and $sample !~ /Remission$/);
+$sample = $samples[1] if ($sample !~ /C$/ and $sample !~ /Remission$/ and $sample !~ /Remisson$/);
+die "Not consitutional sample: $sample!\n" if ($sample !~ /C$/ and $sample !~ /Remission$/ and $sample !~ /Remisson$/);
 
 while (my $x = $vcf->next_data_hash())
 {

@@ -6,10 +6,10 @@ SHELL=/bin/bash  # required to make pipefail work
 LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S ", localtime), $$ARGV[0], "$@: $$_";'
 
 PATIENTS_TEST = 92
-PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247
+PATIENTS_MATCHED = 108 92 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247 AL9890 GL11356
 PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 841 887 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
 PATIENTS_REL2 = 108 737
-PATIENTS_REL3 = 715
+PATIENTS_REL3 = 715 737
 PATIENTS_HD = 715 545 460 564 # sequenced with different protocol (TruSeq); CN for these samples is determined within the HD cohort
 
 all: circos/allpatients.relapse.circos.png circos/allpatients.diagnosis.circos.png allpatients.compiled-segments.exomeCopy.tsv allpatients.filtered-segments.exomeCopy.tsv

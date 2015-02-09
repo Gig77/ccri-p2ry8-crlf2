@@ -227,15 +227,25 @@ while (my $x = $vcf->next_data_hash())
 		
 		if ($deleterious and $effect eq "Missense_Mutation")
 		{
-			my ($polyphen, $sift, $siphy) = ($x->{INFO}{'dbNSFP_Polyphen2_HVAR_pred'}, $x->{INFO}{'dbNSFP_SIFT_score'}, $x->{INFO}{'dbNSFP_29way_logOdds'});
+			my $polyphen = $x->{INFO}{'dbNSFP_Polyphen2_HVAR_pred'};
+			my $sift = undef;
+			if (defined $x->{INFO}{'dbNSFP_SIFT_score'})
+			{
+				foreach my $s (split(",", $x->{INFO}{'dbNSFP_SIFT_score'}))
+				{
+					next if (!defined $s or $s eq ".");
+					$sift = $s if (!defined $sift or $s < $sift);	
+				}
+			} 
+			my $siphy = $x->{INFO}{'dbNSFP_SiPhy_29way_logOdds'};
+
+			my $is_deleterious = 0;
+			$is_deleterious = 1 if ($polyphen and $polyphen =~ /D/ and defined $sift and $sift < 0.05); # polyphen & sift
+			$is_deleterious = 1 if ($polyphen and $polyphen =~ /D/ and defined $siphy and $siphy >= 12); # polyphen & siphy
+			$is_deleterious = 1 if (defined $sift and $sift < 0.05 and defined $siphy and $siphy >= 12); # sift and siphy
+			$is_deleterious = 1 if (defined $siphy and $siphy > 20); # siphy only, highly conserved (keeps GNAQ)
 			
-			my $is_deletrious = 0;
-			$is_deletrious = 1 if ($polyphen and $polyphen =~ /D/ and defined $sift and $sift < 0.05); # polyphen & sift
-			$is_deletrious = 1 if ($polyphen and $polyphen =~ /D/ and defined $siphy and $siphy >= 12); # polyphen & siphy
-			$is_deletrious = 1 if (defined $sift and $sift < 0.05 and defined $siphy and $siphy >= 12); # sift and siphy
-			$is_deletrious = 1 if (defined $siphy and $siphy > 20); # siphy only, highly conserved (keeps GNAQ)
-			
-			next if (!$is_deletrious);
+			next if (!$is_deleterious);
 		}
 
 		
@@ -470,6 +480,7 @@ sub get_variant_classification
 		
 		INTRON 				=> 'Intron', # Variant hits and intron. Technically, hits no exon in the transcript.
 		INTRON_CONSERVED 	=> 'Intron', # The variant is in a highly conserved intronic region
+		SPLICE_SITE_REGION	=> 'Intron', # A sequence variant in which a change has occurred within the region of the splice site, either within 1-3 bases of the exon or 3-8 bases of the intron.
 
 		INTERGENIC 				=> 'IGR', # The variant is in an intergenic region
 		INTERGENIC_CONSERVED 	=> 'IGR', # The variant is in a highly conserved intergenic region
