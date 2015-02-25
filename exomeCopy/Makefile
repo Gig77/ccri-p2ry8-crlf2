@@ -11,8 +11,9 @@ PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 841 887 903 948 957 961 
 PATIENTS_REL2 = 108 737
 PATIENTS_REL3 = 715 737
 PATIENTS_HD = 715 545 460 564 # sequenced with different protocol (TruSeq); CN for these samples is determined within the HD cohort
+PATIENTS_XENO = m1963-545-rel m1964-545-rel m1957-715-rel m1977-G-dia m1967-Y-rel
 
-all: circos/allpatients.relapse.circos.png circos/allpatients.diagnosis.circos.png allpatients.compiled-segments.exomeCopy.tsv allpatients.filtered-segments.exomeCopy.tsv
+all: circos/allpatients.relapse.circos.png circos/allpatients.diagnosis.circos.png allpatients.compiled-segments.exomeCopy.tsv allpatients.filtered-segments.exomeCopy.tsv $(foreach P, $(PATIENTS_XENO), $P.compiled-segments.tsv) \
 
 counts.RData: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_S23C_realigned.bam ~/generic/scripts/exomeCopy/get-counts.R
 	Rscript ~/generic/scripts/exomeCopy/get-counts.R
