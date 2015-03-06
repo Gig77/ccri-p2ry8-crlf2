@@ -1,22 +1,21 @@
 #library("RColorBrewer")
 #X11.options(type="Xlib")
 
-# 737, 108
-p <- "737"
+#p <- "737" ; sample.RR <- "rem_rel3" ; exclude.chr <- c("X", "Y") ; genes.to.label <- c("CREBBP", "KRAS", "NRAS", "FLT3", "PTPN11", "FGFR2", "EPHA5")
+p <- "108" ; sample.RR <- "rem_rel2" ; exclude.chr <- NA ; genes.to.label <- c("JAK2", "KMT2D", "BIRC6", "NBEA", "GNAQ", "GLRX", "CREBBP", "KRAS", "NRAS", "FLT3", "PTPN11", "MLL2")
+
 min.cov <- 0
 cov.max.std.dev <- 10
 max.af <- 1
 min.af <- 0
-genes.to.label <- c("JAK2", "KMT2D", "SI", "LAMB3", "MEGF6", "NBEA", "RPS5", "BIRC6", "SLC26A2", "CREBBP", "KRAS", "NRAS", "FLT3", "PTPN11", "MLL2")
-exclude.chr <- c("chrX", "chrY")
-blast.count <- list("737.dia" = 97, "737.rel" = 96, "108.dia" = "91", "108.rel" = 93)
+blast.count <- list("737.dia" = 97, "737.rel" = 96, "737.rel2" = 70, "108.dia" = 91, "108.rel" = 93, "108.rel2" = 85)
 
 # exome seq variants
 data <- read.csv("~/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", sep="\t")
 data <- data[data$patient == p & data$status != "REJECT",]
+data <- data[data$non_silent==1,]  # only non-silent
 #data <- data[data$var_type=="snp",]  # variant type filter
-data <- data[data$non_silent==1,]  # only non-silent for patient 715, all for other patients
-#data <- data[!(data$chr %in% exclude.chr),]  # sex chromosome filter
+data <- data[!(data$chr %in% exclude.chr),]  # sex chromosome filter
 #data <- data[data$dp_leu_tot >= min.cov & data$dp_rem_tot >= min.cov,]  # minimum coverage filter
 #data <- data[data$dp_rem_tot < mean(data$dp_rem_tot) + cov.max.std.dev * sd(data$dp_rem_tot),] # maximum coverage filter
 
@@ -24,7 +23,7 @@ dia <- data[data$sample=="rem_dia", c("chr", "pos", "ref", "alt", "gene", "freq_
 names(dia)[6] <- "dia"
 rel <- data[data$sample=="rem_rel", c("chr", "pos", "ref", "alt", "gene", "freq_leu")]
 names(rel)[6] <- "rel"
-rel2 <- data[data$sample=="rem_rel2", c("chr", "pos", "ref", "alt", "gene", "freq_leu")]
+rel2 <- data[data$sample==sample.RR, c("chr", "pos", "ref", "alt", "gene", "freq_leu")]
 names(rel2)[6] <- "rel2"
 
 # merge both
@@ -58,10 +57,9 @@ m$col[m$dia==0 & m$rel<=0.25 & m$rel2 > 0.25] <- "#F58E7D"
 m$col[m$dia==0 & m$rel==0 & m$rel2 > 0.25] <- "#BCAFD6"
 m$col[m$dia==0 & m$rel==0 & m$rel2 <= 0.25] <- "#FFF57C"
 
-#png(paste0("~/hdall/results/figures/clonal-progression-", p, ".png"), width=1024)
-pdf(paste0("~/p2ry8-crlf2/results/clonal-kinetics-", p, ".pdf"), width=12)
-plot(0, 0, xlim=c(1, 4.6), ylim=c(0, 0.7), type="n", xaxt="n", yaxt="n", xlab="", ylab="allelic frequency", main=paste(p, " (n=", nrow(m), ")", sep=""))
-axis(1, at=c(1.3, 2.8, 4.3), labels=c(paste0("diagnosis\n(", blast.count[[paste0(p, ".dia")]], "% blasts)"), paste0("relapse 1\n(", blast.count[[paste0(p, ".rel")]], "% blasts)"), paste0("relapse 2\n(", blast.count[[paste0(p, ".rel2")]], "% blasts)")), padj=0.5)
+pdf(paste0("~/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".pdf"), width=12)
+plot(0, 0, xlim=c(1, 4.6), ylim=c(0, 0.7), type="n", xaxt="n", yaxt="n", xlab="", ylab="Allelic frequency", main=paste(p, " (n=", nrow(m), ")", sep=""))
+axis(1, at=c(1.3, 2.8, 4.3), labels=c(paste0("D\n(", blast.count[[paste0(p, ".dia")]], "% blasts)"), paste0("R\n(", blast.count[[paste0(p, ".rel")]], "% blasts)"), paste0("RR\n(", blast.count[[paste0(p, ".rel2")]], "% blasts)")), padj=0.5)
 axis(2, at = seq(0, 1, 0.1), las = 1) 
 
 for(i in 1:nrow(m)) {
@@ -76,6 +74,6 @@ for(i in 1:nrow(m)) {
 	}
 }	
 
-write.table(m, file=paste0("~/p2ry8-crlf2/results/clonal-kinetics-", p, ".tsv"), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(m, file=paste0("~/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".tsv"), col.names=T, row.names=F, sep="\t", quote=F)
 
 dev.off()
