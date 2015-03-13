@@ -538,44 +538,54 @@ xenome/%.xenome.txt:
 #-----------	
 	
 .PHONY: snp
-snp: $(foreach P, $(PATIENTS_MATCHED), snp-profile/$PD.snp-profile.pdf snp-profile/$PR.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
-	 $(foreach P, $(PATIENTS_DIA_ONLY), snp-profile/$PD.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
-	 $(foreach P, $(PATIENTS_REL2), snp-profile/$PR2.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
-	 $(foreach P, $(PATIENTS_REL3), snp-profile/$PR3.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
-	 $(foreach P, $(PATIENTS_XENO), snp-profile/$P.snp-profile.pdf)
-	
+snp: snp-profile/allsamples.loh-segments.tsv
+
+snp-profile/allsamples.loh-segments.tsv: $(foreach P, $(PATIENTS_MATCHED), snp-profile/$PD.snp-profile.pdf snp-profile/$PR.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
+	 									 $(foreach P, $(PATIENTS_DIA_ONLY), snp-profile/$PD.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
+	 									 $(foreach P, $(PATIENTS_REL2), snp-profile/$PR2.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
+	 									 $(foreach P, $(PATIENTS_REL3), snp-profile/$PR3.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
+	 									 $(foreach P, $(PATIENTS_XENO), snp-profile/$P.snp-profile.pdf)
+	{ head -n1 snp-profile/839D.loh-segments.tsv; for f in snp-profile/*.loh-segments.tsv; do tail -n+2 "$$f"; done; } > $@.part
+	mv $@.part $@
+		
 .SECONDEXPANSION:
 snp-profile/%.snp-profile.pdf: coverage-genome/%.coverage-genome.tsv coverage-genome/$$(subst C.loh,C,$$(subst D.loh,C,$$(subst R.loh,C,$$(subst R3.loh,C,$$(subst R2.loh,C,%.loh))))).coverage-genome.tsv \
                                varscan/%.varscan.dbsnp.vcf varscan/$$(subst C.loh,C,$$(subst D.loh,C,$$(subst R.loh,C,$$(subst R3.loh,C,$$(subst R2.loh,C,%.loh))))).varscan.dbsnp.vcf \
                                ~/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript ~/generic/scripts/snp-profile.R --sample-id $* --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --normal-vcf $(word 4, $+) --output-file $@.part
+	Rscript ~/generic/scripts/snp-profile.R --sample-id $* --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --normal-vcf $(word 4, $+) --plot-output-file $@.part --loh-segments-output-file snp-profile/$*.loh-segments.tsv.part
 	mv $@.part $@
+	mv snp-profile/$*.loh-segments.tsv.part snp-profile/$*.loh-segments.tsv
 
 snp-profile/m1977-G-dia.snp-profile.pdf: coverage-genome/m1977-G-dia.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1977-G-dia.varscan.dbsnp.vcf ~/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript ~/generic/scripts/snp-profile.R --sample-id m1977-G-dia --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --output-file $@.part
+	Rscript ~/generic/scripts/snp-profile.R --sample-id m1977-G-dia --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1977-G-dia.loh-segments.tsv.part
 	mv $@.part $@
+	mv snp-profile/m1977-G-dia.loh-segments.tsv.part snp-profile/m1977-G-dia.loh-segments.tsv
 
 snp-profile/m1963-545-rel.snp-profile.pdf: coverage-genome/m1963-545-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1963-545-rel.varscan.dbsnp.vcf ~/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript ~/generic/scripts/snp-profile.R --sample-id m1963-545-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --output-file $@.part
+	Rscript ~/generic/scripts/snp-profile.R --sample-id m1963-545-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1963-545-rel.loh-segments.tsv.part
 	mv $@.part $@
+	mv snp-profile/m1963-545-rel.loh-segments.tsv.part snp-profile/m1963-545-rel.loh-segments.tsv
 
 snp-profile/m1967-Y-rel.snp-profile.pdf: coverage-genome/m1967-Y-rel.coverage-genome.tsv coverage-genome/839C.coverage-genome.tsv varscan/m1967-Y-rel.varscan.dbsnp.vcf ~/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript ~/generic/scripts/snp-profile.R --sample-id m1967-Y-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --output-file $@.part
+	Rscript ~/generic/scripts/snp-profile.R --sample-id m1967-Y-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1967-Y-rel.loh-segments.tsv.part
 	mv $@.part $@
+	mv snp-profile/m1967-Y-rel.loh-segments.tsv.part snp-profile/m1967-Y-rel.loh-segments.tsv
 
 snp-profile/m1964-545-rel.snp-profile.pdf: coverage-genome/m1964-545-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1964-545-rel.varscan.dbsnp.vcf ~/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript ~/generic/scripts/snp-profile.R --sample-id m1964-545-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --output-file $@.part
+	Rscript ~/generic/scripts/snp-profile.R --sample-id m1964-545-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1964-545-rel.loh-segments.tsv.part
 	mv $@.part $@
+	mv snp-profile/m1964-545-rel.loh-segments.tsv.part snp-profile/m1964-545-rel.loh-segments.tsv
 
 snp-profile/m1957-715-rel.snp-profile.pdf: coverage-genome/m1957-715-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1957-715-rel.varscan.dbsnp.vcf ~/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript ~/generic/scripts/snp-profile.R --sample-id m1957-715-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --output-file $@.part
+	Rscript ~/generic/scripts/snp-profile.R --sample-id m1957-715-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1957-715-rel.loh-segments.tsv.part
 	mv $@.part $@
+	mv snp-profile/m1957-715-rel.loh-segments.tsv.part snp-profile/m1957-715-rel.loh-segments.tsv
 
 varscan/%.varscan.vcf: ~/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p varscan

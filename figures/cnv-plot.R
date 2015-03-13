@@ -43,6 +43,7 @@ d$source <- "WES"
 # add SNParray results
 d.array <- read.delim("~/p2ry8-crlf2/results/cnvs.snp_arrays.txt", stringsAsFactor=F)
 d <- rbind(d, data.frame(source="array", seqnames=d.array$seqnames, start=d.array$start, end=d.array$end, width=d.array$size, strand="*", sample.name=d.array$sample, copy.count=d.array$copy.count, log.odds=NA, nranges=d.array$marker, targeted.bp=NA, genes=d.array$genes, overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA))
+d$copy.count[d$copy.count==2] <- 100 # copy count determines plotting order; set to artificially high value such that UPDs are plotted first
 
 # exclude IGH/TCR regions
 d <- d[!(d$seqnames == "7" & d$start >= 38000000 & d$end <= 38500000),] # TCR
@@ -88,6 +89,11 @@ d <- rbind(d,data.frame(source="WES", seqnames="X", start=1387692, end=1713119, 
 # add WES false-negative events based on visual inspection
 d <- rbind(d,data.frame(source="WES", seqnames="X", start=1387692, end=1713119, width=325428, strand="*", sample.name="802D", copy.count=1, log.odds=NA, nranges=NA, targeted.bp=NA, genes="P2RY8,CRLF2", overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA)) 
 
+# add LOH calls
+d.loh <- read.delim("~/p2ry8-crlf2/results/snp-profile/allsamples.loh-segments.tsv", stringsAsFactors=F)
+d.loh <- d.loh[d.loh$seg.mean >= 0.9 & d.loh$num.mark >= 50,]
+d <- rbind(d, with(d.loh, data.frame(seqnames=chrom, start=loc.start, end=loc.end, width=loc.end-loc.start, strand="*", sample.name=sample, copy.count=100, log.odds=NA, nranges=num.mark, targeted.bp=NA, genes=NA, overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA, source="WES")))
+
 # add cumulative genome start/end coordinate
 d$start.cum <- d$start + sizes[match(d$seqnames, sizes$chr), "offset"]
 d$end.cum <- d$end + sizes[match(d$seqnames, sizes$chr), "offset"]
@@ -95,6 +101,7 @@ d$end.cum <- d$end + sizes[match(d$seqnames, sizes$chr), "offset"]
 # assign colors
 col.0 <- "black"
 col.1 <- rgb(57/255,76/255,155/255)
+col.upd <- "lightblue" # rgb(190/255, 190/255, 190/255)
 col.3 <- rgb(237/255,133/255,151/255)
 col.4 <- rgb(232/255,44/255,40/255)
 col.5 <- "orange"
@@ -103,7 +110,8 @@ d$color[d$copy.count == 0] <- col.0
 d$color[d$copy.count == 1] <- col.1
 d$color[d$copy.count == 3] <- col.3
 d$color[d$copy.count == 4] <- col.4
-d$color[d$copy.count >= 5] <- col.5
+d$color[d$copy.count >= 5 & d$copy.count != 100] <- col.5
+d$color[d$copy.count == 100] <- col.upd # UPDs
 d$color[d$seqnames %in% c("X", "Y") & d$copy.count == 2 & s[match(gsub("(.*)(D|R\\d?)$", "\\1", d$sample.name), s$patient), "sex"] %in% c("m")] <- col.3 # add. sex chr. in males
 d$color[d$seqnames %in% c("X", "Y") & d$copy.count > 2] <- col.3 # smooth exomeCopy calls oscillating between 3 and 4 copies 
 
@@ -150,6 +158,8 @@ plot.cnvs <- function(samples) {
 			cnvs <- d[d$sample.name == sample & d$source %in% c("array", "MLPA"),] # only plot non-WES calls (=SNParray & MLPA)		
 		}
 		
+		#print(cnvs)
+		
 		# plot cnvs
 		if (nrow(cnvs) > 0) {
 			cnvs <- cnvs[order(cnvs$copy.count, cnvs$end-cnvs$start, decreasing=T),] # plot gains, larger cnvs first
@@ -159,6 +169,7 @@ plot.cnvs <- function(samples) {
 					cnvs[j,"start.cum"] = cnvs[j,"start.cum"] - (min.width-width)/2
 					cnvs[j,"end.cum"] = cnvs[j,"end.cum"] + (min.width-width)/2
 				}
+				if (cnvs$copy.count[j] > 10) { print(paste(sample, cnvs[j,"seqnames"], cnvs[j,"start.cum"], (numsamp-i+1)+0.98, cnvs[j,"end.cum"], (numsamp-i+1)+0.02, col=cnvs$color[j])) }
 				rect(cnvs[j,"start.cum"], (numsamp-i+1)+0.98, cnvs[j,"end.cum"], (numsamp-i+1)+0.02, col=cnvs$color[j], border=NA)	
 			}			
 		}	
@@ -185,7 +196,7 @@ plot.cnvs <- function(samples) {
 	axis(3,markers$offset, markers$name, las=2, cex.axis=0.6, padj=markers$padj[order(markers$offset)], mgp=c(3, .3, 0), tck=-0.007, lwd.ticks=0.7)
 	axis(2, (1:numsamp)+0.5, gsub("R\\d+$", "RR", gsub("(.*)(D|R\\d?)$", "\\1 \\2", rev(samples))), las=2, tick=F, cex.axis=0.6, mgp=c(3, .3, 0))
 	box()
-	legend(sum(sizes$size)/2, -1, c(0,1,3,4,"5+","n/a"), fill=c(col.0, col.1, col.3, col.4, col.5, "lightgray"), horiz=T, xjust=0.5, seg.len=10, xpd=T, cex=0.7)
+	legend(sum(sizes$size)/2, -1, c(0,1,"UPD",3,4,"5+","n/a"), fill=c(col.0, col.1, col.upd, col.3, col.4, col.5, "lightgray"), horiz=T, xjust=0.5, seg.len=10, xpd=T, cex=0.7)
 }
 
 # ---------------------------------------
