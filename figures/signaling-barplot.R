@@ -11,27 +11,31 @@ cases.relapsing.diaonly <- c("1060", "BJ17183")
 cases.nonrelapsing <- c("242", "360", "365", "379", "400", "506", "769", "802", "833", "887", "841", "903", "948", "957", "961", "1066", "1089", "HW11537", "KT14158", "TL14516")
 cases.exclude <- c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957")
 
-cols <- c(		"KRAS" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25378561:G>A" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25378562:C>T" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25378647:T>A" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25398281:C>T" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25398284:C>T" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25398284:C>A" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25398285:C>G" = brewer.pal(6, "OrRd")[2],
-				"KRAS:12:25398285:C>T" = brewer.pal(6, "OrRd")[2],
+cols <- c(		"KRAS" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25378561:G>A" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25378562:C>T" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25378647:T>A" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25398281:C>T" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25398284:C>T" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25398284:C>A" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25398285:C>G" = brewer.pal(8, "OrRd")[2],
+				"KRAS:12:25398285:C>T" = brewer.pal(8, "OrRd")[2],
 
-				"NRAS" = brewer.pal(6, "OrRd")[4],
-				"NRAS:1:115256529:T>C" = brewer.pal(6, "OrRd")[4],
-				"NRAS:1:115258744:C>T" = brewer.pal(6, "OrRd")[4],
-				"NRAS:1:115258747:C>T" = brewer.pal(6, "OrRd")[4],
-				"NRAS:1:115258747:C>G" = brewer.pal(6, "OrRd")[4],
-				"NRAS:1:115258748:C>T" = brewer.pal(6, "OrRd")[4],
+				"NRAS" = brewer.pal(8, "OrRd")[4],
+				"NRAS:1:115256529:T>C" = brewer.pal(8, "OrRd")[4],
+				"NRAS:1:115258744:C>T" = brewer.pal(8, "OrRd")[4],
+				"NRAS:1:115258747:C>T" = brewer.pal(8, "OrRd")[4],
+				"NRAS:1:115258747:C>G" = brewer.pal(8, "OrRd")[4],
+				"NRAS:1:115258748:C>T" = brewer.pal(8, "OrRd")[4],
 		
-				"PTPN11" = brewer.pal(6, "OrRd")[6],
-				"PTPN11:12:112888210:G>A" = brewer.pal(6, "OrRd")[6],
-				"PTPN11:12:112888211:A>T" = brewer.pal(6, "OrRd")[6],
-		
+				"PTPN11" = brewer.pal(8, "OrRd")[6],
+				"PTPN11:12:112888210:G>A" = brewer.pal(8, "OrRd")[6],
+				"PTPN11:12:112888211:A>T" = brewer.pal(8, "OrRd")[6],
+
+				"FLT3" = brewer.pal(8, "OrRd")[8],
+				"FLT3:13:28599081:C>A" = brewer.pal(8, "OrRd")[8],
+				"FLT3:13:28592629:T>C" = brewer.pal(8, "OrRd")[8],
+				
 				"JAK1" = brewer.pal(6, "PuBu")[2],
 				"JAK1:1:65305426:G>C" = brewer.pal(6, "PuBu")[2],
 				"JAK1:1:65310517:C>T" = brewer.pal(6, "PuBu")[2],
@@ -55,19 +59,19 @@ cols <- c(		"KRAS" = brewer.pal(6, "OrRd")[2],
 				"CRLF2" = "black",
 				"CRLF2:X:1314966:A>C" = "black",
 				
-				"diagnosis" = brewer.pal(6, "OrRd")[6],
+				"diagnosis" = brewer.pal(8, "OrRd")[6],
 				"relapse" = brewer.pal(6, "PuBu")[6])
 				
 # get KRAS, NRAS, PTPN11 mutations from hotspot mutation caller
 m <- read.delim("~/p2ry8-crlf2/results/hotspot-mutations.tsv")
 
-# add in MuTect hotspot calls
+# add in MuTect calls in hotspot regions plus FLT3
 hotspots <- read.delim("~/p2ry8-crlf2/scripts/signaling-hotspots.tsv", colClasses = c("character", "character", "numeric"))
 mutect <- read.delim("~/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", stringsAsFactors=F)
-mutect.hot <- mutect[paste(mutect$chr, mutect$pos) %in% paste(hotspots$chr, hotspots$pos) & mutect$status != "REJECT" & mutect$non_silent==1, c("patient", "sample", "cohort", "chr", "pos", "ref", "alt", "gene", "dp_leu_tot", "dp_leu_var", "freq_leu")]
-mutect.hot$sample[mutect.hot$sample=="rem_dia"] <- "diagnosis"
-mutect.hot$sample[mutect.hot$sample=="rem_rel"] <- "relapse"
-m <- merge(m, mutect.hot, by=c("patient", "sample", "cohort", "gene", "chr", "pos", "ref", "alt"), all=T)
+mutect <- mutect[(paste(mutect$chr, mutect$pos) %in% paste(hotspots$chr, hotspots$pos) | mutect$gene=="FLT3") & mutect$status != "REJECT" & mutect$non_silent==1, c("patient", "sample", "cohort", "chr", "pos", "ref", "alt", "gene", "dp_leu_tot", "dp_leu_var", "freq_leu")]
+mutect$sample[mutect$sample=="rem_dia"] <- "diagnosis"
+mutect$sample[mutect$sample=="rem_rel"] <- "relapse"
+m <- merge(m, mutect, by=c("patient", "sample", "cohort", "gene", "chr", "pos", "ref", "alt"), all=T)
 m$source <- NA
 m$source[!is.na(m$frequency) & !is.na(m$freq_leu)] <- "hotspot+mutect"
 m$source[is.na(m$frequency) & !is.na(m$freq_leu)] <- "mutect"
@@ -139,7 +143,7 @@ plot.dia <- ggplot(data=m.relapsing.dia, aes(x=patient.label, y=frequency.norm, 
 		facet_grid(.~group, scale="free_x", space = "free_x") +
 		geom_bar(stat="identity", width=0.9, colour="white") +
 		geom_text(aes(label=label, y=midpoint), size=8, vjust=1, colour="white", parse=TRUE) +
-		scale_fill_manual(values = cols, breaks=c("KRAS:12:25398284:C>T", "NRAS:1:115258744:C>T", "PTPN11:12:112888210:G>A", "JAK1:1:65305426:G>C", "JAK2:9:5073749:G>A", "JAK3:19:17945970:G>A", "CRLF2:X:1314966:A>C"), labels=c("KRAS", "NRAS", "PTPN11", "JAK1", "JAK2", "JAK3", "CRLF2")) + 
+		scale_fill_manual(values = cols, breaks=c("KRAS:12:25398284:C>T", "NRAS:1:115258744:C>T", "PTPN11:12:112888210:G>A", "FLT3:13:28599081:C>A", "JAK1:1:65305426:G>C", "JAK2:9:5073749:G>A", "JAK3:19:17945970:G>A", "CRLF2:X:1314966:A>C"), labels=c("KRAS", "NRAS", "PTPN11", "FLT3", "JAK1", "JAK2", "JAK3", "CRLF2")) + 
 		scale_y_continuous(expand = c(0,0), limits = c(0,1), breaks=c(0.25, 0.5, 0.75, 1)) +
 		theme_bw() + 
 		theme(axis.text.x = element_text(angle = 90, hjust = 1, size=15), axis.text.y = element_text(size=13), axis.title.y = element_text(size=18, vjust=0.1), axis.title.x = element_blank(), 
@@ -149,7 +153,7 @@ plot.dia <- ggplot(data=m.relapsing.dia, aes(x=patient.label, y=frequency.norm, 
 				panel.grid.minor.y = element_blank(),
 				plot.title=element_text(size=20, face="bold", vjust=1), plot.margin=unit(c(0.5,1,0,1), "cm")) +
 #		geom_text(aes(label = mut.short), size = 3, hjust = 0.5, vjust = 1.2, position = "stack", colour="white") +
-		ylab("Allelic frequency diagnosis")	+ 
+		ylab("Adjusted AF diagnosis")	+ 
 		ggtitle("Ras/Jak signaling mutations at diagnosis")
 
 #---
@@ -182,7 +186,7 @@ plot.rel <- ggplot(data=m.relapsing.rel, aes(x=patient, y=frequency.norm, fill=m
 						panel.grid.minor.y = element_blank(),
 						plot.title=element_text(size=20, face="bold", vjust=1), plot.margin=unit(c(1,1,0.3,1), "cm")) +
 #				geom_text(aes(label = mut.short), size = 3, hjust = 0.5, vjust = 1.2, position = "stack", colour="white") +
-				ylab("Allelic frequency relapse") + 
+				ylab("Adjusted AF relapse") + 
 				ggtitle("Ras/Jak signaling mutations at relapse")
 		
 grid.arrange(plot.dia, plot.rel, nrow=2)
@@ -209,7 +213,7 @@ plot.dia <- ggplot(data=m.relapsing.combined, aes(x=patient, y=frequency.norm, f
 		facet_grid(sample~.) +
 		geom_bar(stat="identity", width=0.9, colour="white") +
 		geom_text(aes(label=label, y=midpoint), size=8, vjust=1, colour="white", parse=TRUE) +
-		scale_fill_manual(values = cols, breaks=c("KRAS:12:25398284:C>T", "NRAS:1:115258744:C>T", "PTPN11:12:112888210:G>A", "JAK1:1:65305426:G>C", "JAK2:9:5078360:A>G", "JAK3:19:17945970:G>A", "CRLF2:X:1314966:A>C"), labels=c("KRAS", "NRAS", "PTPN11", "JAK1", "JAK2", "JAK3", "CRLF2")) + 
+		scale_fill_manual(values = cols, breaks=c("KRAS:12:25398284:C>T", "NRAS:1:115258744:C>T", "PTPN11:12:112888210:G>A", "FLT3:13:28599081:C>A", "JAK1:1:65305426:G>C", "JAK2:9:5078360:A>G", "JAK3:19:17945970:G>A", "CRLF2:X:1314966:A>C"), labels=c("KRAS", "NRAS", "PTPN11", "FLT3", "JAK1", "JAK2", "JAK3", "CRLF2")) + 
 		scale_y_continuous(expand = c(0,0), limits = c(0,1), breaks=c(0.25, 0.5, 0.75, 1)) +
 		theme_bw() + 
 		theme(axis.text.x = element_text(angle = 90, hjust = 1, size=15), axis.text.y = element_text(size=13), axis.title.y = element_text(size=18, vjust=0.1), axis.title.x = element_blank(), 
@@ -220,7 +224,7 @@ plot.dia <- ggplot(data=m.relapsing.combined, aes(x=patient, y=frequency.norm, f
 				panel.grid.minor.y = element_blank(),
 				plot.title=element_text(size=20, face="bold", vjust=1), plot.margin=unit(c(0.5,1,0,1), "cm")) +
 #		geom_text(aes(label = mut.short), size = 3, hjust = 0.5, vjust = 1.2, position = "stack", colour="white") +
-		ylab("Allelic frequency") + 
+		ylab("Adjusted AF") + 
 		ggtitle("Ras/Jak signaling mutations at diagnosis and relapse (matched cases)")
 print(plot.dia)
 dev.off()
@@ -252,7 +256,7 @@ print(ggplot(data=m.nonrelapsing, aes(x=patient, y=frequency.norm, fill=mut, ord
 					  panel.grid.major.x = element_blank(),
 					  panel.grid.minor.y = element_blank()) +
 #				geom_text(aes(label = mut.short), size = 3, hjust = 0.5, vjust = 1.2, position = "stack", colour="white") +
-				ylab("Allelic frequency") +
+				ylab("Adjusted AF") +
 				ggtitle("Ras/Jak signaling mutations at diagnosis (non-relapsing cohort)"))
 dev.off()
 
@@ -264,7 +268,7 @@ print(sprintf("P-value homogeneous/heterogenious b/w diagnosis/relapse (Fisher's
 # compute significance for difference in ras/jak mutations b/w diagnosis/relapse
 t <- data.frame(patient=rep(cases.relapsing.matched,2), sample=c(rep("diagnosis", length(cases.relapsing.matched)), rep("relapse", length(cases.relapsing.matched))))
 t <- merge(t, aggregate(gene~patient+sample, m, paste), all.x=T)
-ras <- grepl("(KRAS|NRAS|PTPN11)", t$gene)
+ras <- grepl("(KRAS|NRAS|PTPN11|FLT3)", t$gene)
 jak <- grepl("(JAK1|JAK2|JAK3|CRLF2)", t$gene)
 t$sigstat <- NA
 t$sigstat[is.na(t$gene)] <- "none"

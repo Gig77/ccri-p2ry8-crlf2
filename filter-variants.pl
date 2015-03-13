@@ -320,11 +320,7 @@ while (my $line = $vcf->next_line())
 	}		
 
 	my $status = $x->{FILTER}->[0];
-	
-	# keep mutation CREBBP mutation falsely rejected by MuTect
-	$status = "MISSED" if ($patient eq "737" and $x->{CHROM} eq "chr12" and $x->{POS} eq "25398284"); # KRAS
-	
-	
+		
 	if ($status eq "REJECT") # rejected by MuTect
 	{
 		$filtered_qual ++;
@@ -581,6 +577,11 @@ while (my $line = $vcf->next_line())
 	if ($evs_freq > 0.01) { push(@rejected_because, "ESP6500"); }
 	if ($x->{CHROM} eq "hs37d5") { push(@rejected_because, "decoy genome"); }
 	
+	# keep known pathogenic CRLF2 mutations overlapping with segmental duplication (PAR1 on Y chromosome!)
+	my ($gene, $add_genes, $impact, $effect, $aa_change) = get_impact($x->{INFO}{EFF});
+	@rejected_because = () if ($gene eq "CRLF2" && $aa_change eq "F232C"); 
+	
+	
 	$line =~ s/^([^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t)[^\t]+/$1REJECT/ if (@rejected_because > 0);
 	$line =~ s/^([^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t[^\t]+\t)[^\t]+/$1MISSED/ if ($status eq "MISSED");
 	
@@ -595,7 +596,6 @@ while (my $line = $vcf->next_line())
 		}
 	} 
 	my $siphy = $x->{INFO}{'dbNSFP_SiPhy_29way_logOdds'};
-	my ($gene, $add_genes, $impact, $effect, $aa_change) = get_impact($x->{INFO}{EFF});
 	
 	my $is_deleterious = "n/d";
 	$is_deleterious = "yes" if ($effect eq "NON_SYNONYMOUS_CODING" and $polyphen and $polyphen =~ /D/ and defined $sift and $sift < 0.05); # polyphen & sift
@@ -663,9 +663,21 @@ while (my $line = $vcf->next_line())
 	print "\t", join(',', @repeats), "\t", join(',', @dups), "\t", join(',', @blacklist), "\t$accessible\t", join(",", @retro), "\t", join(",", @rem_samples), "\t", join(";", keys(%evss));
 	print "\t", $evs_freq > 0 ? $evs_freq : ""; 
 	print "\n";
-		
+			
 #	print "\n"; print Dumper($x); exit;
 }
+
+# add 737 KRAS conserved clonal variant missed by MuTect b/c three reads were present in remission sample, presumably because of MRD
+if ($patient eq "737" and $cmp_type eq "rem_dia") {
+	print("737\trem_dia\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t187\t115\t70\t0.374\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");
+} elsif ($patient eq "737" and $cmp_type eq "rem_rel") {
+	print("737\trem_rel\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t154\t81\t73\t0.474\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");		
+} elsif ($patient eq "737" and $cmp_type eq "rem_rel2") {
+	print("737\trem_rel2\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t152\t138\t14\t0.0921\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");		
+} elsif ($patient eq "737" and $cmp_type eq "rem_rel3") {
+	print("737\trem_rel3\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t141\t89\t52\t0.368794326\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");		
+}	
+
 $vcf->close();
 close(VCFOUT) if ($vcf_out);
 	

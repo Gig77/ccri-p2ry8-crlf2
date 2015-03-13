@@ -16,7 +16,7 @@ patients.nonrelapsing <- c(patients.nonrelapsing.withmutdata, patients.nonrelaps
 patients <- c(patients.relapsing, patients.nonrelapsing)
 patients.excl <- c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957")
 
-c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v6.txt", strip.white=TRUE, na.strings=c("", "NA", "-", " -", " N.A.", "N.A", "N.A.", "N.A.?", "n/a", "n/d", "n.d.", " ", "early (CNS)"))
+c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v8.txt", strip.white=TRUE, na.strings=c("", "NA", "-", " -", " N.A.", "N.A", "N.A.", "N.A.?", "n/a", "n/d", "n.d.", " ", "early (CNS)"))
 
 #----
 # CLEAN UP DATA
@@ -138,7 +138,7 @@ c$lymphoid_devel.relapsing.dia <- ifelse(c$patient_id %in% patients.relapsing, c
 c$lymphoid_devel.relapsing.rel <- ifelse(c$patient_id %in% patients.relapsing.matched, c$patient_id %in% c(m[m$gene %in% lymphoid_devel.genes & m$sample=="rem_rel", "patient"], ikzf1.del.rel, ikzf2.del.rel, ikzf3.del.rel, pax5.del.rel, ebf1.del.rel, etv6.del.rel), NA)
 c$lymphoid_devel.relapsing <- c$lymphoid_devel.relapsing.dia | c$lymphoid_devel.relapsing.rel
 
-jak_stat.genes <- c("JAK2", "JAK3", "JAK1", "IL7R", "SYK")
+jak_stat.genes <- c("JAK2", "JAK3", "JAK1", "IL7R", "SYK", "CRLF2")
 c$jak_stat <- ifelse(c$patient_id %in% patients.nonrelapsing.nomutdata, NA, c$patient_id %in% m[m$gene %in% jak_stat.genes, "patient"]) 
 c$jak_stat.dia <- ifelse(c$patient_id %in% patients.nonrelapsing.nomutdata, NA, c$patient_id %in% m[m$gene %in% jak_stat.genes & m$sample=="rem_dia", "patient"]) 
 c$jak_stat.relapsing.dia <- ifelse(c$patient_id %in% patients.relapsing, c$jak_stat.dia, NA)
