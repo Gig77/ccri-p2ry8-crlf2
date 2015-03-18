@@ -13,7 +13,7 @@ PATIENTS_REL3 = 715 737
 PATIENTS_XENO = m1963-545-rel m1964-545-rel m1957-715-rel m1977-G-dia m1967-Y-rel
 
 #all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xenografts.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf exome-coverage/coverage-plots-exome.png coverage-chr21/allpatients.coverage-chr21.pdf picard loh
+all: gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xenografts.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf exome-coverage/coverage-plots-exome.png coverage-chr21/allpatients.coverage-chr21.pdf picard loh snp-comparison/allsamples.snp-comparison.tsv
 
 #-----------
 # DOWNLOAD
@@ -616,3 +616,20 @@ varscan/%.varscan.dbsnp.vcf: varscan/%.varscan.vcf ~/generic/data/ncbi/common_no
 	test -s $@.part
 	mv $@.part $@
 	rm $<
+
+# SNP comparison (QC against sample swaps)
+snp-comparison/allsamples.snp-comparison.tsv: $(foreach P, $(PATIENTS_MATCHED), snp-comparison/$PD.snp-comparison.tsv snp-comparison/$PR.snp-comparison.tsv) \
+	 										  $(foreach P, $(PATIENTS_DIA_ONLY), snp-comparison/$PD.snp-comparison.tsv) \
+	 										  $(foreach P, $(PATIENTS_REL2), snp-comparison/$PR2.snp-comparison.tsv) \
+	 										  $(foreach P, $(PATIENTS_REL3), snp-comparison/$PR3.snp-comparison.tsv)
+	rm -f $@
+	{ head -n1 snp-comparison/839D.snp-comparison.tsv; for f in snp-comparison/*.snp-comparison.tsv; do tail -n+2 "$$f"; done; } > $@.part
+	sort -k 3,3n $@.part > $@.sorted
+	mv $@.sorted $@
+	rm $@.part
+
+.SECONDEXPANSION:
+snp-comparison/%.snp-comparison.tsv: varscan/%.varscan.dbsnp.vcf varscan/$$(subst C.snp,C,$$(subst D.snp,C,$$(subst R.snp,C,$$(subst R3.snp,C,$$(subst R2.snp,C,%.snp))))).varscan.dbsnp.vcf ~/generic/scripts/snp-comparison.R
+	mkdir -p snp-comparison
+	Rscript ~/generic/scripts/snp-comparison.R --sample-id $* --tumor-vcf $(word 1, $+) --normal-vcf $(word 2, $+) --output-file $@.part
+	mv $@.part $@
