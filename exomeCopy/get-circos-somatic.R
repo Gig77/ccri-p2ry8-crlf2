@@ -10,7 +10,7 @@ option_list <- list(
 		)
 
 opt <- parse_args(OptionParser(option_list=option_list))
-#opt <- data.frame('segments-file'="~/p2ry8-crlf2/results/exomeCopy/allpatients.compiled-segments.exomeCopy.tsv", 'output-file'="~/p2ry8-crlf2/results/exomeCopy/circos/S737R2.somatic.circos.tsv", tumor="S737R2", normal="S737C", stringsAsFactors=F, check.names=F)
+#opt <- data.frame('segments-file'="/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.compiled-segments.exomeCopy.tsv", 'output-file'="/mnt/projects/p2ry8-crlf2/results/exomeCopy/circos/S737R2.somatic.circos.tsv", tumor="S737R2", normal="S737C", stringsAsFactors=F, check.names=F)
 
 if (invalid(opt$'segments-file')) stop("segments file not specified")
 if (invalid(opt$'output-file')) stop("output file not specified")

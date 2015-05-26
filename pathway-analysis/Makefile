@@ -17,28 +17,28 @@ all: pathways-pathwaycommons.tsv pathscan-dia-relapsing pathscan-rel pathscan/sm
 
 # --- prepare input pathways
 
-~/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt: 
-	curl http://www.pathwaycommons.org/pc2/downloads/Pathway%20Commons.4.All.GSEA.gmt.gz -o ~/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt.gz
-	gunzip ~/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt.gz
+/mnt/projects/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt: 
+	curl http://www.pathwaycommons.org/pc2/downloads/Pathway%20Commons.4.All.GSEA.gmt.gz -o /mnt/projects/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt.gz
+	gunzip /mnt/projects/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt.gz
 	
-pathways-pathwaycommons.tsv: ~/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt ~/p2ry8-crlf2/scripts/pathway-analysis/pathwaycommons2pathscan.pl 
-	cat $< | perl ~/p2ry8-crlf2/scripts/pathway-analysis/pathwaycommons2pathscan.pl > $@.part
+pathways-pathwaycommons.tsv: /mnt/projects/generic/data/pathway-commons/PathwayCommons.4.All.GSEA.gmt /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/pathwaycommons2pathscan.pl 
+	cat $< | perl /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/pathwaycommons2pathscan.pl > $@.part
 	mv $@.part $@ 
 
-pathways-all.sizefiltered.tsv: pathways-pathwaycommons.tsv ~/hdall/results/music/pathscan/gene-sets.mutsigdb4.0.tsv
+pathways-all.sizefiltered.tsv: pathways-pathwaycommons.tsv /mnt/projects/hdall/results/music/pathscan/gene-sets.mutsigdb4.0.tsv
 	cat $^ | perl -ne '@f = split /\t/; @g = split(/\|/, $$f[3]); print $$_ if (@g > 1 and @g < 400);' > $@.part
 	mv $@.part $@
 
 
 # --- prepare input mutations
 
-maf/%.maf: ../filtered-variants/%.filtered.vcf ucsc-genes.g1k_v37.roi.gz ucsc-genes.g1k_v37.roi.gz.tbi ~/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl
+maf/%.maf: ../filtered-variants/%.filtered.vcf ucsc-genes.g1k_v37.roi.gz ucsc-genes.g1k_v37.roi.gz.tbi /mnt/projects/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl
 	mkdir -p maf
-	cat $(word 1,$^) | perl ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl \
+	cat $(word 1,$^) | perl /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl \
 		--sample-tumor $(shell echo $* | perl -ne 's/_rem_dia/D/; s/_rem_rel/R/; print $$_;') \
 		--sample-normal $(shell echo $* | perl -ne 's/_rem_dia/C/; s/_rem_rel/C/; print $$_;') \
 		--music-roi ucsc-genes.g1k_v37.roi.gz \
-		--mapping-entrez ~/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv \
+		--mapping-entrez /mnt/projects/generic/data/ensembl/gene-id-mapping.biomart-0.7.tsv \
 		--min-af 0.20 \
 		--deleterious \
 		2>&1 1>$@.part | grep -vP '(Leading or trailing space|variant.Format|Domain annotations come from)'
@@ -52,7 +52,7 @@ maf/%.maf: ../filtered-variants/%.filtered.vcf ucsc-genes.g1k_v37.roi.gz ucsc-ge
 pathscan-dia-relapsing: dia-relapsing/smg.tsv pathscan/sm_pathways.dia-relapsing.annotated.tsv
 
 maf/relapsing.dia.maf: $(foreach P, $(PATIENTS_MATCHED), maf/$P_rem_dia.maf)
-	perl ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl --header 2>&1 1> $@.part
+	perl /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl --header 2>&1 1> $@.part
 	cat $^ >> $@.part
 	mv $@.part $@
 
@@ -68,7 +68,7 @@ dia-relapsing/roi_covgs/%.covg: $(DATA)/bam/variant_calling_process_sample_%_rea
 	genome music bmr calc-covg \
 		--bam-list dia-relapsing/tmp.$*/bamlist \
 		--output-dir dia-relapsing/tmp.$* \
-		--reference-sequence ~/generic/data/broad/human_g1k_v37.fasta \
+		--reference-sequence /mnt/projects/generic/data/broad/human_g1k_v37.fasta \
 		--roi-file ucsc-genes.g1k_v37.roi
 	mv dia-relapsing/tmp.$*/roi_covgs/* dia-relapsing/roi_covgs/
 	mv dia-relapsing/tmp.$*/gene_covgs/* dia-relapsing/gene_covgs/
@@ -79,16 +79,16 @@ dia-relapsing/total_covgs: $(foreach P, $(PATIENTS_MATCHED), dia-relapsing/roi_c
 	genome music bmr calc-covg \
 		--bam-list dia-relapsing/bam-list.tsv \
 		--output-dir dia-relapsing/ \
-		--reference-sequence ~/generic/data/broad/human_g1k_v37.fasta \
+		--reference-sequence /mnt/projects/generic/data/broad/human_g1k_v37.fasta \
 		--roi-file ucsc-genes.g1k_v37.roi
 
-dia-relapsing/gene_mrs: dia-relapsing/total_covgs dia-relapsing/bam-list.tsv maf/relapsing.dia.maf ~/generic/data/broad/human_g1k_v37.fasta ucsc-genes.g1k_v37.roi
+dia-relapsing/gene_mrs: dia-relapsing/total_covgs dia-relapsing/bam-list.tsv maf/relapsing.dia.maf /mnt/projects/generic/data/broad/human_g1k_v37.fasta ucsc-genes.g1k_v37.roi
 	rm -f dia-relapsing/overall_bmrs
 	genome music bmr calc-bmr \
 		--bam-list dia-relapsing/bam-list.tsv \
 		--maf-file maf/relapsing.dia.maf \
 		--output-dir dia-relapsing/ \
-		--reference-sequence ~/generic/data/broad/human_g1k_v37.fasta \
+		--reference-sequence /mnt/projects/generic/data/broad/human_g1k_v37.fasta \
 		--roi-file ucsc-genes.g1k_v37.roi
 
 dia-relapsing/smg.tsv: dia-relapsing/gene_mrs
@@ -108,8 +108,8 @@ pathscan/sm_pathways.dia-relapsing.raw.tsv: dia-relapsing/gene_mrs pathways-all.
 	mv $@.part $@
 	mv $@.part_detailed $@_detailed
 
-pathscan/sm_pathways.dia-relapsing.annotated.tsv: pathscan/sm_pathways.dia-relapsing.raw.tsv pathways-all.sizefiltered.tsv maf/relapsing.dia.maf ~/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl
-	perl ~/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl \
+pathscan/sm_pathways.dia-relapsing.annotated.tsv: pathscan/sm_pathways.dia-relapsing.raw.tsv pathways-all.sizefiltered.tsv maf/relapsing.dia.maf /mnt/projects/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl
+	perl /mnt/projects/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl \
 		--pathway-file pathways-all.sizefiltered.tsv \
 		--sm-pathways $< \
 		--sm-pathways-detail $<_detailed \
@@ -124,7 +124,7 @@ pathscan/sm_pathways.dia-relapsing.annotated.tsv: pathscan/sm_pathways.dia-relap
 #---------------------------------
 
 maf/dia.maf: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY) $(PATIENTS_EXCLUDED_HYPER_REL), maf/$P_rem_dia.maf)
-	perl ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl --header 2>&1 1> $@.part
+	perl /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl --header 2>&1 1> $@.part
 	cat $^ >> $@.part
 	mv $@.part $@
 
@@ -142,7 +142,7 @@ dia/bam-list.tsv: $(foreach P, $(PATIENTS_MATCHED) $(PATIENTS_DIA_ONLY) $(PATIEN
 pathscan-rel: rel/smg.tsv pathscan/sm_pathways.rel.annotated.tsv 
 
 maf/relapsing.rel.maf: $(foreach P, $(PATIENTS_MATCHED), maf/$P_rem_rel.maf)
-	perl ~/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl --header 2>&1 1> $@.part
+	perl /mnt/projects/p2ry8-crlf2/scripts/pathway-analysis/vcf2maf.pl --header 2>&1 1> $@.part
 	cat $^ >> $@.part
 	mv $@.part $@
 
@@ -158,7 +158,7 @@ rel/roi_covgs/%.covg: $(DATA)/bam/variant_calling_process_sample_%_realigned.bam
 	genome music bmr calc-covg \
 		--bam-list rel/tmp.$*/bamlist \
 		--output-dir rel/tmp.$* \
-		--reference-sequence ~/generic/data/broad/human_g1k_v37.fasta \
+		--reference-sequence /mnt/projects/generic/data/broad/human_g1k_v37.fasta \
 		--roi-file ucsc-genes.g1k_v37.roi
 	mv rel/tmp.$*/roi_covgs/* rel/roi_covgs/
 	mv rel/tmp.$*/gene_covgs/* rel/gene_covgs/
@@ -169,16 +169,16 @@ rel/total_covgs: $(foreach P, $(PATIENTS_MATCHED), rel/roi_covgs/$PR.covg) rel/b
 	genome music bmr calc-covg \
 		--bam-list rel/bam-list.tsv \
 		--output-dir rel/ \
-		--reference-sequence ~/generic/data/broad/human_g1k_v37.fasta \
+		--reference-sequence /mnt/projects/generic/data/broad/human_g1k_v37.fasta \
 		--roi-file ucsc-genes.g1k_v37.roi
 
-rel/gene_mrs: rel/total_covgs rel/bam-list.tsv maf/relapsing.rel.maf ~/generic/data/broad/human_g1k_v37.fasta ucsc-genes.g1k_v37.roi
+rel/gene_mrs: rel/total_covgs rel/bam-list.tsv maf/relapsing.rel.maf /mnt/projects/generic/data/broad/human_g1k_v37.fasta ucsc-genes.g1k_v37.roi
 	rm -f rel/overall_bmrs
 	genome music bmr calc-bmr \
 		--bam-list rel/bam-list.tsv \
 		--maf-file maf/relapsing.rel.maf \
 		--output-dir rel/ \
-		--reference-sequence ~/generic/data/broad/human_g1k_v37.fasta \
+		--reference-sequence /mnt/projects/generic/data/broad/human_g1k_v37.fasta \
 		--roi-file ucsc-genes.g1k_v37.roi
 
 rel/smg.tsv: rel/gene_mrs
@@ -198,8 +198,8 @@ pathscan/sm_pathways.rel.raw.tsv: rel/gene_mrs pathways-all.sizefiltered.tsv maf
 	mv $@.part $@
 	mv $@.part_detailed $@_detailed
 
-pathscan/sm_pathways.rel.annotated.tsv: pathscan/sm_pathways.rel.raw.tsv pathways-all.sizefiltered.tsv maf/relapsing.rel.maf ~/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl
-	perl ~/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl \
+pathscan/sm_pathways.rel.annotated.tsv: pathscan/sm_pathways.rel.raw.tsv pathways-all.sizefiltered.tsv maf/relapsing.rel.maf /mnt/projects/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl
+	perl /mnt/projects/hdall/scripts/pathway-analysis/annotate-pathscan-result.pl \
 		--pathway-file pathways-all.sizefiltered.tsv \
 		--sm-pathways $< \
 		--sm-pathways-detail $<_detailed \
@@ -209,12 +209,12 @@ pathscan/sm_pathways.rel.annotated.tsv: pathscan/sm_pathways.rel.raw.tsv pathway
 	
 #--- combine results into single list, cluster pathways by similarity
 
-pathscan/sm_pathways.dia-relapsing+rel.tsv: pathscan/sm_pathways.dia-relapsing.annotated.tsv pathscan/sm_pathways.rel.annotated.tsv ~/hdall/scripts/pathway-analysis/cluster-pathways.R ~/hdall/scripts/music/merge-sm-pathways.R
-	Rscript ~/hdall/scripts/music/merge-sm-pathways.R \
+pathscan/sm_pathways.dia-relapsing+rel.tsv: pathscan/sm_pathways.dia-relapsing.annotated.tsv pathscan/sm_pathways.rel.annotated.tsv /mnt/projects/hdall/scripts/pathway-analysis/cluster-pathways.R /mnt/projects/hdall/scripts/music/merge-sm-pathways.R
+	Rscript /mnt/projects/hdall/scripts/music/merge-sm-pathways.R \
 		pathscan/sm_pathways.dia-relapsing.annotated.tsv \
 		pathscan/sm_pathways.rel.annotated.tsv \
 		2>&1 1>$@.part | tee -a make.log
-	Rscript ~/hdall/scripts/pathway-analysis/cluster-pathways.R $@.part $@.clustered 1e-6 \
+	Rscript /mnt/projects/hdall/scripts/pathway-analysis/cluster-pathways.R $@.part $@.clustered 1e-6 \
 		2>&1 | tee -a make.log
 	mv $@.clustered $@
 	rm $@.part

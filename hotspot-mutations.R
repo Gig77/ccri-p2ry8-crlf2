@@ -7,7 +7,7 @@ rm(list=ls())
 min.basequal <- 20
 min.reads.rev <- 2
 min.reads.fwd <- 2
-hotspots <- read.delim("~/p2ry8-crlf2/scripts/signaling-hotspots.tsv", colClasses = c("character", "character", "numeric"))
+hotspots <- read.delim("/mnt/projects/p2ry8-crlf2/scripts/signaling-hotspots.tsv", colClasses = c("character", "character", "numeric"))
 
 cases.relapsing.matched <- c("108", "92", "460", "545", "564", "715", "737", "839", "B36", "BB16", "DL2", "GI8", "GI13", "HV57", "HV80", "LU3", "MA5", "N7", "S23", "SN18", "DS10898", "VS14645", "SE15285", "KE17247", "AL9890", "GL11356")
 cases.relapsing.diaonly <- c("1060", "BJ17183")
@@ -38,7 +38,7 @@ check_base <- function(p, cohort, sample, gene, chr, pos, ref, base, qual, mutat
 }
 
 process_bam <- function(p, cohort, sample, bam, gene, chr, pos, mutations) {
-	cmd <- paste0("~/tools/samtools-0.1.19/samtools view -bh -F 1024 ", bam, " ", chr, ":", pos, "-", pos+1, " | ~/tools/samtools-0.1.19/samtools mpileup -q 1 -f ~/generic/data/broad/human_g1k_v37.fasta - 2>/dev/null | grep ", pos)
+	cmd <- paste0("~/tools/samtools-0.1.19/samtools view -bh -F 1024 ", bam, " ", chr, ":", pos, "-", pos+1, " | ~/tools/samtools-0.1.19/samtools mpileup -q 1 -f /mnt/projects/generic/data/broad/human_g1k_v37.fasta - 2>/dev/null | grep ", pos)
 	#print(cmd)
 	r <- system(cmd, intern=T)
 	if (length(r) == 0) {
@@ -66,19 +66,19 @@ process_bam <- function(p, cohort, sample, bam, gene, chr, pos, mutations) {
 result <- foreach(i=1:nrow(hotspots), .verbose = FALSE) %dopar% {
 	mutations <- data.frame(patient=character(0), cohort=character(0), sample=character(0), gene=character(0), chr=character(0), pos=numeric(0), ref=character(0), alt=character(0), alt.reads=numeric(0), tot.reads=numeric(0), frequency=numeric(0), qual.forward.mean=numeric(0), qual.reverse.mean=numeric(), qual.forward.max=numeric(0), qual.reverse.max=numeric(), stringsAsFactors=F)
 	for (p in cases.relapsing.matched) {
-		mutations <- process_bam(p, "relapsing", "diagnosis", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "D_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
-		mutations <- process_bam(p, "relapsing", "relapse", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "R_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
-		mutations <- process_bam(p, "relapsing", "remission", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "C_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "relapsing", "diagnosis", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "D_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "relapsing", "relapse", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "R_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "relapsing", "remission", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "C_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
 	}
 	for (p in cases.relapsing.diaonly) {
-		mutations <- process_bam(p, "relapsing", "diagnosis", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "D_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
-		mutations <- process_bam(p, "relapsing", "remission", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "C_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "relapsing", "diagnosis", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "D_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "relapsing", "remission", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "C_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
 	}
 	for (p in cases.nonrelapsing) {
-		mutations <- process_bam(p, "non-relapsing", "diagnosis", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "D_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
-		mutations <- process_bam(p, "non-relapsing", "remission", paste0("~/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "C_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "non-relapsing", "diagnosis", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "D_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
+		mutations <- process_bam(p, "non-relapsing", "remission", paste0("/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_", p, "C_realigned.bam"), hotspots[i, "gene"], hotspots[i, "chr"], hotspots[i, "pos"], mutations)
 	}
 	mutations
 }
 result <- do.call("rbind", result)
-write.table(result, file="~/p2ry8-crlf2/results/hotspot-mutations.tsv", col.names=T, row.names=F, sep="\t", quote=F)
+write.table(result, file="/mnt/projects/p2ry8-crlf2/results/hotspot-mutations.tsv", col.names=T, row.names=F, sep="\t", quote=F)

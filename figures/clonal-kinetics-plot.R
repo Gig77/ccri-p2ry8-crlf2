@@ -11,7 +11,7 @@ min.af <- 0
 blast.count <- list("737.dia" = 97, "737.rel" = 96, "737.rel2" = 70, "108.dia" = 91, "108.rel" = 93, "108.rel2" = 85)
 
 # exome seq variants
-data <- read.csv("~/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", sep="\t")
+data <- read.csv("/mnt/projects/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", sep="\t")
 data <- data[data$patient == p & data$status != "REJECT",]
 data <- data[data$non_silent==1,]  # only non-silent
 #data <- data[data$var_type=="snp",]  # variant type filter
@@ -57,7 +57,7 @@ m$col[m$dia==0 & m$rel<=0.25 & m$rel2 > 0.25] <- "#F58E7D"
 m$col[m$dia==0 & m$rel==0 & m$rel2 > 0.25] <- "#BCAFD6"
 m$col[m$dia==0 & m$rel==0 & m$rel2 <= 0.25] <- "#FFF57C"
 
-pdf(paste0("~/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".pdf"), width=12)
+pdf(paste0("/mnt/projects/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".pdf"), width=12)
 plot(0, 0, xlim=c(1, 4.6), ylim=c(0, 0.7), type="n", xaxt="n", yaxt="n", xlab="", ylab="Allelic frequency", main=paste(p, " (n=", nrow(m), ")", sep=""))
 axis(1, at=c(1.3, 2.8, 4.3), labels=c(paste0("D\n(", blast.count[[paste0(p, ".dia")]], "% blasts)"), paste0("R\n(", blast.count[[paste0(p, ".rel")]], "% blasts)"), paste0("RR\n(", blast.count[[paste0(p, ".rel2")]], "% blasts)")), padj=0.5)
 axis(2, at = seq(0, 1, 0.1), las = 1) 
@@ -74,6 +74,6 @@ for(i in 1:nrow(m)) {
 	}
 }	
 
-write.table(m, file=paste0("~/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".tsv"), col.names=T, row.names=F, sep="\t", quote=F)
+write.table(m, file=paste0("/mnt/projects/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".tsv"), col.names=T, row.names=F, sep="\t", quote=F)
 
 dev.off()

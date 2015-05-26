@@ -1,6 +1,6 @@
 min.width <- 3000000
 # chromosome sizes
-sizes <- read.delim("~/generic/data/hg19/ucsc.hg19.chrom.sizes", header=F, colClasses=c("factor", "numeric"))
+sizes <- read.delim("/mnt/projects/generic/data/hg19/ucsc.hg19.chrom.sizes", header=F, colClasses=c("factor", "numeric"))
 colnames(sizes) <- c("chr", "size")
 sizes$chr <- gsub("chr", "", sizes$chr)
 rownames(sizes) <- sizes$chr
@@ -8,7 +8,7 @@ sizes <- sizes[c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", 
 sizes$offset <- cumsum(sizes$size) - sizes$size
 
 # sex
-s <- read.delim("~/p2ry8-crlf2/results/patient_sex.tsv")
+s <- read.delim("/mnt/projects/p2ry8-crlf2/results/patient_sex.tsv")
 
 # cohorts
 samples.matched <- c("DL2D", "DL2R", "108D", "108R", "108R2", "GI8D", "GI8R", "HV80D", "HV80R","N7D", "N7R", "DS10898D", "DS10898R", "VS14645D", "VS14645R", "BB16D", "BB16R", "SE15285D", "SE15285R", "715D", "715R", "715R3", "839D", "839R", "AL9890D", "AL9890R", "GL11356D", "GL11356R", "GI13D", "GI13R", "B36D", "B36R", "92D", "92R", "HV57D", "HV57R", "737D", "737R", "737R3", "KE17247D", "KE17247R", "S23D", "S23R", "1060D", "BJ17183D")
@@ -32,8 +32,8 @@ markers <- rbind(markers, c("5", 158139160, "EBF1", 0.5))
 markers$offset <- as.numeric(markers$pos) + sizes[match(markers$chr, sizes$chr), "offset"]
 
 # read cnvs
-d <- read.delim("~/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv", stringsAsFactors=F)
-d.hdall <- read.delim("~/hdall/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv", stringsAsFactors=F)
+d <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv", stringsAsFactors=F)
+d.hdall <- read.delim("/mnt/projects/hdall/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv", stringsAsFactors=F)
 d.hdall$seqnames <- gsub("chr", "", d.hdall$seqnames)
 d.hdall$sample.name <- gsub("_dia", "D", d.hdall$sample.name)
 d.hdall$sample.name <- gsub("_rel", "R", d.hdall$sample.name)
@@ -41,7 +41,7 @@ d <- rbind(d, d.hdall)
 d$source <- "WES"
 
 # add SNParray results
-d.array <- read.delim("~/p2ry8-crlf2/results/cnvs.snp_arrays.txt", stringsAsFactor=F)
+d.array <- read.delim("/mnt/projects/p2ry8-crlf2/results/cnvs.snp_arrays.txt", stringsAsFactor=F)
 d <- rbind(d, data.frame(source="array", seqnames=d.array$seqnames, start=d.array$start, end=d.array$end, width=d.array$size, strand="*", sample.name=d.array$sample, copy.count=d.array$copy.count, log.odds=NA, nranges=d.array$marker, targeted.bp=NA, genes=d.array$genes, overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA))
 d$copy.count[d$copy.count==2] <- 100 # copy count determines plotting order; set to artificially high value such that UPDs are plotted first
 
@@ -90,7 +90,7 @@ d <- rbind(d,data.frame(source="WES", seqnames="X", start=1387692, end=1713119, 
 d <- rbind(d,data.frame(source="WES", seqnames="X", start=1387692, end=1713119, width=325428, strand="*", sample.name="802D", copy.count=1, log.odds=NA, nranges=NA, targeted.bp=NA, genes="P2RY8,CRLF2", overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA)) 
 
 # add LOH calls
-d.loh <- read.delim("~/p2ry8-crlf2/results/snp-profile/allsamples.loh-segments.tsv", stringsAsFactors=F)
+d.loh <- read.delim("/mnt/projects/p2ry8-crlf2/results/snp-profile/allsamples.loh-segments.tsv", stringsAsFactors=F)
 d.loh <- d.loh[d.loh$seg.mean >= 0.9 & d.loh$num.mark >= 50,]
 d <- rbind(d, with(d.loh, data.frame(seqnames=chrom, start=loc.start, end=loc.end, width=loc.end-loc.start, strand="*", sample.name=sample, copy.count=100, log.odds=NA, nranges=num.mark, targeted.bp=NA, genes=NA, overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA, source="WES")))
 
@@ -202,7 +202,7 @@ plot.cnvs <- function(samples) {
 # ---------------------------------------
 # relapsing cases
 # ---------------------------------------
-pdf("~/p2ry8-crlf2/results/figures/cnv-plot-relapsing.pdf", paper="a4")
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/cnv-plot-relapsing.pdf", paper="a4")
 par(mar=c(4.5,6,6,3))
 numsamp <- length(samples.matched)
 plot.cnvs(samples.matched)
@@ -212,7 +212,7 @@ dev.off()
 # ---------------------------------------
 # non-relapsing cases (diagnosis only)
 # ---------------------------------------
-pdf("~/p2ry8-crlf2/results/figures/cnv-plot-nonrelapsing.pdf", paper="a4")
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/cnv-plot-nonrelapsing.pdf", paper="a4")
 par(mar=c(4.5,6,6,3))
 numsamp <- length(samples.diaonly)
 plot.cnvs(samples.diaonly)

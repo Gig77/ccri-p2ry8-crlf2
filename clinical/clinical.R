@@ -3,7 +3,7 @@ library(gridExtra)
 library(vcd)
 
 rm(list=ls())
-source("~/p2ry8-crlf2/scripts/clinical/test_pairwise.R")
+source("/mnt/projects/p2ry8-crlf2/scripts/clinical/test_pairwise.R")
 
 set.seed(22)
 
@@ -16,7 +16,7 @@ patients.nonrelapsing <- c(patients.nonrelapsing.withmutdata, patients.nonrelaps
 patients <- c(patients.relapsing, patients.nonrelapsing)
 patients.excl <- c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957")
 
-c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v8.txt", strip.white=TRUE, na.strings=c("", "NA", "-", " -", " N.A.", "N.A", "N.A.", "N.A.?", "n/a", "n/d", "n.d.", " ", "early (CNS)"))
+c <- read.delim("/mnt/projects/p2ry8-crlf2/results/clinical/Clinical data_P-C_v8.txt", strip.white=TRUE, na.strings=c("", "NA", "-", " -", " N.A.", "N.A", "N.A.", "N.A.?", "n/a", "n/d", "n.d.", " ", "early (CNS)"))
 
 #----
 # CLEAN UP DATA
@@ -58,12 +58,12 @@ c$HD <- as.logical(ifelse(is.na(c$HD), 0, 1))
 # READ MUTATION DATA
 #----
 
-m <- read.delim("~/p2ry8-crlf2/results/filtered-variants.cosmic.tsv")
+m <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.cosmic.tsv")
 m <- m[m$status!="REJECT" & m$non_silent==T & m$freq_leu >= 0.1,]
 m$patient <- as.character(m$patient)
 m.merged <- merge(m[m$sample=="rem_dia", c("patient", "chr", "pos", "ref", "alt", "freq_leu", "gene")], m[m$sample=="rem_rel",c("patient", "chr", "pos", "ref", "alt", "freq_leu", "gene")], by=c("patient", "chr", "pos", "ref", "alt", "gene"), all=T, suffixes=c(".dia", ".rel")) 
 
-#cn <- read.delim("~/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
+#cn <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
 #cn$patient <- unlist(strsplit(as.character(cn$sample.name), "(C|D|R\\d?)$", perl=T))
 #cn$sample <- NA
 #cn$sample[grepl("D$", cn$sample.name, perl=T)] <- "dia"
@@ -190,13 +190,13 @@ c$chr21.gain.or.iamp.somatic <- c$chr21.gain.or.iamp & !c$DS
 
 c$sex.chr.abnorm <- c$patient_id %in% sex.chr.abnorm
 
-write.table(c, file="~/p2ry8-crlf2/results/clinical/clinical_data.processed.tsv", col.names=T, row.names=F, sep="\t", quote=F)
+write.table(c, file="/mnt/projects/p2ry8-crlf2/results/clinical/clinical_data.processed.tsv", col.names=T, row.names=F, sep="\t", quote=F)
 
 #----
 # ASSOCIATION TESTING
 #----
 
-pdf("~/p2ry8-crlf2/results/clinical/clinical-associations.significant.pdf")
+pdf("/mnt/projects/p2ry8-crlf2/results/clinical/clinical-associations.significant.pdf")
 tests <- test_pairwise_assoc(c, 
 		sig.level=0.1, 
 		exclude=c("patient_id", "source", "exome", "rel_protocol", "outcome_after.1st.rel", "BM.transplantation.date", "comment"),

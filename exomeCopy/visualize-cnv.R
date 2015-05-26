@@ -9,7 +9,7 @@ region <- "PAX5"; chr <- "chr9"; start <- 36495626; end <- 37377382
 #region <- "ACSM2A"; chr <- "chr16"; start <- 20318327; end <- 20643523
 #region <- "BTG1"; chr <- "chr12"; start <- 91278699; end <- 92889529
 
-s <- read.delim("~/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
+s <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
 gr <- GRanges(seqnames=paste0("chr", s$seqnames), ranges=IRanges(start=s$start, end=s$end), sample.name=s$sample.name, group=s$sample.name, copy.count=s$copy.count, log.odds=s$log.odds, nranges=s$nranges, targeted.bp=s$targeted.bp, genes=s$genes)
 gr <- gr[seqnames(gr)==chr & end(gr) >= start & start(gr) <= end,]
 start(gr) <- pmax(start(gr), start)
@@ -37,13 +37,13 @@ for (sample in unique(gr$sample.name)) {
 	cntracks <- c(cntracks, cntrack)
 }
 
-pdf(paste0("~/p2ry8-crlf2/results/exomeCopy/", region, ".pdf"))
+pdf(paste0("/mnt/projects/p2ry8-crlf2/results/exomeCopy/", region, ".pdf"))
 plotTracks(c(list(itrack, gtrack, biomTrack), cntracks), from=start, to=end, title.width=1.8, CN0="darkred", "CN1"="red", "CN2"="white", "CN3"="lightblue", "CN4"="darkblue")
 dev.off()
 
 #cntrack <- AnnotationTrack(gr, name="CN", showId=T, stacking="squish", col="black", cex=0.7, stackHeight=1, fontcolor="black", just.group="above", rot.title=0)
 #cntrack@range@elementMetadata@listData$id <- gr$sample.name
 
-#pdf("~/p2ry8-crlf2/results/exomeCopy/IKZF1.pdf")
+#pdf("/mnt/projects/p2ry8-crlf2/results/exomeCopy/IKZF1.pdf")
 #plotTracks(list(itrack, gtrack, biomTrack, cntrack), from=start, to=end)
 #dev.off()

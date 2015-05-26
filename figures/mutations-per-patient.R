@@ -3,7 +3,7 @@ warnings()
 
 # TABLE: filtered-variants.tsv
 # read and filter input data
-t <- read.delim("~/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
+t <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 
 # join diagnosis and relapse variants
@@ -68,11 +68,11 @@ make_plot <- function() {
 }
 
 # plot PNG
-png("~/p2ry8-crlf2/results/figures/mutations-per-patient.png", width=2800, height=2800, pointsize=40)
+png("/mnt/projects/p2ry8-crlf2/results/figures/mutations-per-patient.png", width=2800, height=2800, pointsize=40)
 make_plot()
 dev.off()
 
 # plot PDF
-pdf("~/p2ry8-crlf2/results/figures/mutations-per-patient.pdf", width=13, height=13)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/mutations-per-patient.pdf", width=13, height=13)
 make_plot()
 dev.off()

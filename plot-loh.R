@@ -7,7 +7,7 @@ option_list <- list(make_option("--input-file", type="character", help="name of 
 					make_option("--input-file-normal", type="character", help="name of input file (matched normal)"))
 opt <- parse_args(OptionParser(option_list=option_list))
 			
-#opt <- data.frame('input-file' = "~/p2ry8-crlf2/results/varscan/715R.varscan.dbsnp.vcf", 'input-file-normal' = "~/p2ry8-crlf2/results/varscan/715C.varscan.dbsnp.vcf", 'output-file' = "~/p2ry8-crlf2/results/loh/715R.loh.pdf", stringsAsFactors=F, check.names=F)	
+#opt <- data.frame('input-file' = "/mnt/projects/p2ry8-crlf2/results/varscan/715R.varscan.dbsnp.vcf", 'input-file-normal' = "/mnt/projects/p2ry8-crlf2/results/varscan/715C.varscan.dbsnp.vcf", 'output-file' = "/mnt/projects/p2ry8-crlf2/results/loh/715R.loh.pdf", stringsAsFactors=F, check.names=F)	
 			
 v <- read.table(opt$'input-file', header=F, sep="\t", stringsAsFactors=F)
 v <- v[v[,1] %in% c(1:22, "X", "Y") & grepl("rs", v[,3]),]

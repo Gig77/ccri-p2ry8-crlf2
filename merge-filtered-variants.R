@@ -1,4 +1,4 @@
-var <- read.delim("~/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", check.names=F, stringsAsFactor=F)
+var <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", check.names=F, stringsAsFactor=F)
 var.pass <- var[var$status!="REJECT",]
 dia <- var.pass[var.pass$sample=="rem_dia",]
 rel1 <- var.pass[var.pass$sample=="rem_rel",]

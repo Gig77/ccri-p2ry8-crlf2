@@ -63,11 +63,11 @@ cols <- c(		"KRAS" = brewer.pal(8, "OrRd")[2],
 				"relapse" = brewer.pal(6, "PuBu")[6])
 				
 # get KRAS, NRAS, PTPN11 mutations from hotspot mutation caller
-m <- read.delim("~/p2ry8-crlf2/results/hotspot-mutations.tsv")
+m <- read.delim("/mnt/projects/p2ry8-crlf2/results/hotspot-mutations.tsv")
 
 # add in MuTect calls in hotspot regions plus FLT3
-hotspots <- read.delim("~/p2ry8-crlf2/scripts/signaling-hotspots.tsv", colClasses = c("character", "character", "numeric"))
-mutect <- read.delim("~/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", stringsAsFactors=F)
+hotspots <- read.delim("/mnt/projects/p2ry8-crlf2/scripts/signaling-hotspots.tsv", colClasses = c("character", "character", "numeric"))
+mutect <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", stringsAsFactors=F)
 mutect <- mutect[(paste(mutect$chr, mutect$pos) %in% paste(hotspots$chr, hotspots$pos) | mutect$gene=="FLT3") & mutect$status != "REJECT" & mutect$non_silent==1, c("patient", "sample", "cohort", "chr", "pos", "ref", "alt", "gene", "dp_leu_tot", "dp_leu_var", "freq_leu")]
 mutect$sample[mutect$sample=="rem_dia"] <- "diagnosis"
 mutect$sample[mutect$sample=="rem_rel"] <- "relapse"
@@ -92,7 +92,7 @@ m$mut <- paste0(m$gene, ":", m$chr, ":", m$pos, ":", m$ref, ">", m$alt)
 m$mut.short <- paste0(m$ref, ">", m$alt)
 
 # normalize by blast counts
-c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v6.txt", stringsAsFactors=F)
+c <- read.delim("/mnt/projects/p2ry8-crlf2/results/clinical/Clinical data_P-C_v6.txt", stringsAsFactors=F)
 names(c)[names(c)=="blasts_dia"] <- "blasts.dia"
 names(c)[names(c)=="blasts_rel..1st."] <- "blasts.rel"
 c$blasts.dia[c$blasts.dia=="73 pB"] <- 73
@@ -111,7 +111,7 @@ m$patient.label <- as.factor(ifelse(m$patient %in% cases.relapsing.matched, past
 
 # subset samples
 m.relapsing <- m[m$cohort=="relapsing",]
-write.table(m[!is.na(m$source),], "~/p2ry8-crlf2/results/figures/signaling-barplot.mutations.tsv", row.names=F, col.names=T, sep="\t", quote=F)
+write.table(m[!is.na(m$source),], "/mnt/projects/p2ry8-crlf2/results/figures/signaling-barplot.mutations.tsv", row.names=F, col.names=T, sep="\t", quote=F)
 
 m.relapsing.dia <- m.relapsing[m.relapsing$sample=="diagnosis",]
 m.relapsing.dia <- ddply(m.relapsing.dia[order(m.relapsing.dia$frequency.norm, decreasing=T),], .(patient), transform, midpoint=cumsum(frequency.norm)-0.5*frequency.norm+0.005) # add midpoint for label plotting
@@ -121,7 +121,7 @@ m.relapsing.cons <- merge(m.relapsing.dia, m.relapsing.rel, by=c("patient", "mut
 m.relapsing.cons <- paste0(m.relapsing.cons$patient, ":", m.relapsing.cons$mut)
 m.nonrelapsing <- m[m$cohort=="non-relapsing" & m$sample=="diagnosis",]
 
-pdf("~/p2ry8-crlf2/results/figures/signaling-barplot.relapsing.pdf", width=18, height=13)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/signaling-barplot.relapsing.pdf", width=18, height=13)
 
 #---
 # RELAPSING, DIA
@@ -208,7 +208,7 @@ sorted$group[sorted$group=="homogeneous"] <- "0homogeneous"
 sorted <- sorted[order(sorted$sample, sorted$group, sorted$frequency.norm, decreasing=T),]
 m.relapsing.combined$patient <- factor(m.relapsing.combined$patient, unique(as.character(sorted$patient)))
 
-pdf("~/p2ry8-crlf2/results/figures/signaling-barplot.matched.pdf", width=14, height=9)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/signaling-barplot.matched.pdf", width=14, height=9)
 plot.dia <- ggplot(data=m.relapsing.combined, aes(x=patient, y=frequency.norm, fill=mut, order=-frequency.norm)) + 
 		facet_grid(sample~.) +
 		geom_bar(stat="identity", width=0.9, colour="white") +
@@ -243,7 +243,7 @@ het <- aggregate(frequency.norm~patient, data=m.nonrelapsing, FUN=length)
 het <- het[het$frequency.norm>1,"patient"]
 m.nonrelapsing$group <- ifelse(m.nonrelapsing$patient %in% het, "heterogeneous", "homogeneous")
 
-pdf("~/p2ry8-crlf2/results/figures/signaling-barplot.non-relapsing.pdf", width=10, height=6)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/signaling-barplot.non-relapsing.pdf", width=10, height=6)
 print(ggplot(data=m.nonrelapsing, aes(x=patient, y=frequency.norm, fill=mut, order=-frequency.norm)) +
 				facet_grid(.~group, scale="free_x", space = "free_x") +
 				geom_bar(stat="identity", width=0.9, colour="white") +

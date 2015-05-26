@@ -3,7 +3,7 @@ library("ggplot2")
 
 # TABLE: filtered-variants.tsv
 # read and filter input data
-t <- read.delim("~/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
+t <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 t <- t[!t$patient %in% c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957"),]
 #t <- t[!t$sample %in% c("rem_rel2", "rem_rel3"),]
@@ -22,7 +22,7 @@ m$Gene <- factor(as.character(m$gene), c(genes.jak, genes.ras, genes.lymphoid))
 m$class <- factor(m$class, c("JAK/STAT", "RTK/Ras", "Lymphoid devel."))
 
 # adjust AF for BLAST count (if available)
-c <- read.delim("~/p2ry8-crlf2/results/clinical/Clinical data_P-C_v6.txt", stringsAsFactors=F)
+c <- read.delim("/mnt/projects/p2ry8-crlf2/results/clinical/Clinical data_P-C_v6.txt", stringsAsFactors=F)
 c$blasts_dia[c$blasts_dia=="73 pB"] <- 73
 c$blasts_dia <- as.numeric(c$blasts_dia)
 names(c)[names(c)=="blasts_rel..1st."] <- "blasts_rel"
@@ -68,8 +68,8 @@ m$gene_cohort <- factor(paste(m$gene, m$cohort), levels=names(genes.col))
 #m$shape <- as.integer(m$Gene) %% 3
 #m$shape[m$cohort == "relapsing"] <- m$shape[m$cohort == "relapsing"] + 15
 
-#pdf("~/p2ry8-crlf2/results/figures/af-plot.pdf", width=10)
-pdf("~/p2ry8-crlf2/results/figures/af-plot-without-box.pdf", width=10)
+#pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot.pdf", width=10)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot-without-box.pdf", width=10)
 p <- ggplot(m, aes(factor(class), freq_leu.adj))
 p <- p + theme_bw()
 p <- p + facet_grid(.~sample, scales="free")

@@ -1,7 +1,7 @@
 library(reshape)
 warnings()
 
-t <- read.delim("~/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
+t <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 
 t$sample[t$sample=="rem_dia"] <- "dia"
@@ -40,4 +40,4 @@ m <- m[unlist(c(sapply(topgenes, function(x) { which(x==m$gene) }), which(!m$gen
 names(m)[names(m) %in% paste0(patients.relapsing, "_dia")] <- paste0(names(m)[names(m) %in% paste0(patients.relapsing, "_dia")], "_r")
 
 # write output
-write.table(m, file="~/p2ry8-crlf2/results/gene-patient-matrix.tsv.part", row.names=F, col.names=T, sep="\t")
+write.table(m, file="/mnt/projects/p2ry8-crlf2/results/gene-patient-matrix.tsv.part", row.names=F, col.names=T, sep="\t")

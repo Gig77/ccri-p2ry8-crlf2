@@ -1,14 +1,14 @@
 options(warn=1)
 library(GenomicRanges)
 
-exons.df <- read.delim("~/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed", header = FALSE)
+exons.df <- read.delim("/mnt/projects/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed", header = FALSE)
 exons <- GRanges(seqname = exons.df[, 1], IRanges(start = exons.df[,2] + 1, end = exons.df[, 3]))
 
-snp.df <- read.delim("~/p2ry8-crlf2/results/exomeCopy/P2RY8-CRLF2_SNParray.txt")
+snp.df <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/P2RY8-CRLF2_SNParray.txt")
 snp.df <- snp.df[snp.df$Type != "LOH",]
 snp <- GRanges(seqname = snp.df[,"Chr"], IRanges(start = snp.df[,"Min"], end = snp.df[,"Max"]), cn = snp.df[,"CN.State"], sample = snp.df[,"Sample"])
 
-ec.df <- read.delim("~/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
+ec.df <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
 ec <- GRanges(seqname = ec.df[,"seqnames"], IRanges(start = ec.df[,"start"], end = ec.df[,"end"]), cn = ec.df[,"copy.count"], sample = ec.df[,"sample.name"])
 
 perf <- data.frame(sample=character(0), tp=integer(0), fn=integer(0), fp=integer(0), tn=integer(0), sens=numeric(0), spec=numeric(0), prec=numeric(0), stringsAsFactors=F)
@@ -39,4 +39,4 @@ for(s in c("242D", "379D", "737D", "737R", "839D", "839R", "92D", "92R", "957D",
 	perf[nrow(perf)+1,] <- c(s, tp, fn, fp, tn, sens, spec, prec)
 }
 
-write.table(perf, "~/p2ry8-crlf2/results/exomeCopy/performance.tsv", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE)
+write.table(perf, "/mnt/projects/p2ry8-crlf2/results/exomeCopy/performance.tsv", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE)

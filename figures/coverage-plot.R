@@ -4,7 +4,7 @@
 maxdepth <- 200
 
 # Get a list of the bedtools output files you'd like to read in
-files <- list.files(path="~/p2ry8-crlf2/results/exome-coverage", pattern=".coverage.bedtools.txt$")
+files <- list.files(path="/mnt/projects/p2ry8-crlf2/results/exome-coverage", pattern=".coverage.bedtools.txt$")
 labs <- sapply(strsplit(files, "variant_calling_process_sample_", fixed=T), "[[", 1); labs <- sapply(strsplit(labs, ".", fixed=T), "[[", 1) # extract sample name from file name
  # extract sample name from file name
 
@@ -14,7 +14,7 @@ cov <- list()
 cov_cumul <- list()
 means <- numeric(0)
 for (i in 1:length(files)) {
-	cov[[i]] <- read.table(paste0("~/p2ry8-crlf2/results/exome-coverage/", files[i]))
+	cov[[i]] <- read.table(paste0("/mnt/projects/p2ry8-crlf2/results/exome-coverage/", files[i]))
 	cov_cumul[[i]] <- 1-cumsum(cov[[i]][,5])
 	means[i] <- cov_cumul[[i]][50]
 }
@@ -31,7 +31,7 @@ cols <- rainbow(length(cov))
 ltypes <- rep(1:6,length.out=length(cov))
 
 # Save the graph to a file
-png("~/p2ry8-crlf2/results/figures/coverage.png", h=2000, w=2700, pointsize=40)
+png("/mnt/projects/p2ry8-crlf2/results/figures/coverage.png", h=2000, w=2700, pointsize=40)
 
 # Create plot area, but do not plot anything. Add gridlines and axis labels.
 layout(matrix(c(1,2), nrow = 1), widths = c(0.7, 0.3))
