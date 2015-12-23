@@ -68,12 +68,12 @@ m$gene_cohort <- factor(paste(m$gene, m$cohort), levels=names(genes.col))
 #m$shape <- as.integer(m$Gene) %% 3
 #m$shape[m$cohort == "relapsing"] <- m$shape[m$cohort == "relapsing"] + 15
 
-#pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot.pdf", width=10)
-pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot-without-box.pdf", width=10)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot.pdf", width=10)
+#pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot-without-box.pdf", width=10)
 p <- ggplot(m, aes(factor(class), freq_leu.adj))
 p <- p + theme_bw()
 p <- p + facet_grid(.~sample, scales="free")
-#p <- p + geom_boxplot(colour=class, outlier.shape = NA)
+p <- p + geom_boxplot(colour=class, outlier.shape = NA)
 p <- p + geom_point(aes(shape = gene_cohort, color = gene_cohort), position = position_jitter(width=0.2), size=3)
 #p <- p + scale_shape_identity()
 #p <- p + geom_point(data=m[m$cohort=="relapsing",], aes(shape = Gene, color = Gene), position = position_jitter(width=0.2), size=3)
@@ -81,6 +81,6 @@ p <- p + geom_point(aes(shape = gene_cohort, color = gene_cohort), position = po
 p <- p + scale_shape_manual(values=genes.shape)
 p <- p + scale_colour_manual(values=genes.col)
 p <- p + scale_y_continuous(breaks=seq(0,1,0.1), limits=c(0, 1))
-p <- p + xlab("\nGroup") + ylab("Allelic frequency\n")
+p <- p + xlab("\nGroup") + ylab("Adj. allelic frequency\n")
 print(p)
 dev.off()

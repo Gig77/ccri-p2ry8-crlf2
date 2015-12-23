@@ -1,7 +1,7 @@
 use warnings FATAL => qw( all );
 use strict;
 
-use lib "$ENV{HOME}/generic/scripts";
+use lib "/mnt/projects/generic/scripts";
 use Generic;
 use Log::Log4perl qw(:easy);
 use Carp;
@@ -25,29 +25,30 @@ open(C, "$cosmic_mutation_file") or croak "ERROR: Could not open file $cosmic_mu
 while(<C>)
 {
 	chomp;
-	my ($gene_name, $accession_number, $gene_cds_length, $hgnc_id, $sample_name, $id_sample, $id_tumour, $primary_site, $site_subtype, $primary_histology,
-		$histology_subtype, $genome_wide_screen, $mutation_id, $mutation_cds, $mutation_aa, $mutation_description, $mutation_zygosity, $mutation_ncbi36_genome_position,
-		$mutation_ncbi36_strand, $mutation_GRCh37_genome_position, $mutation_GRCh37_strand, $mutation_somatic_status, $pubmed_pmid, $sample_source, 
+	
+	my ($gene_name, $accession_number, $gene_cds_length, $hgnc_id, $sample_name, $id_sample, $id_tumour, $primary_site, $site_subtype, $primary_histology,	
+		$histology_subtype, $genome_wide_screen, $mutation_id, $mutation_cds, $mutation_aa, $mutation_description, $mutation_zygosity,	
+		$GRCh, $mutation_GRCh37_genome_position, $mutation_strand, $snp, $fathmm_prediction, $fathmm_score, $mutation_somatic_status, $pubmed_id, $id_study, $sample_source,
 		$tumour_origin, $age, $comments) = split /\t/;
 	
-	next if ($only_confirmed and $mutation_somatic_status ne "Confirmed somatic variant");
+	next if ($mutation_somatic_status ne "Confirmed somatic variant");
 	$gene_name =~ s/_ENST.*//;
 	
 	$cosmic{$mutation_GRCh37_genome_position} = defined $cosmic{$mutation_GRCh37_genome_position} ? $cosmic{$mutation_GRCh37_genome_position} + 1 : 1;
 	$cosmic_leuk{$mutation_GRCh37_genome_position} = defined $cosmic_leuk{$mutation_GRCh37_genome_position} ? $cosmic_leuk{$mutation_GRCh37_genome_position} + 1 : 1
 		if ($histology_subtype =~ /leukaemia/);
-	
+		
 	if ($mutation_aa =~ /p\.(.)(\d+)(.+)/)
 	{
 		my ($prev_aa, $aa_pos, $after_aa) = ($1, $2, $3);
 		$cosmic{"$gene_name:$prev_aa:$aa_pos"} = defined $cosmic{"$gene_name:$prev_aa:$aa_pos"} ? $cosmic{"$gene_name:$prev_aa:$aa_pos"} + 1 : 1;
 		$cosmic_leuk{"$gene_name:$prev_aa:$aa_pos"} = defined $cosmic_leuk{"$gene_name:$prev_aa:$aa_pos"} ? $cosmic_leuk{"$gene_name:$prev_aa:$aa_pos"} + 1 : 1
-			if ($histology_subtype =~ /leukaemia/);
+			if ($histology_subtype =~ /leukaemi/);
 	}
 	$entries_read ++;
 }
 close(C);
-INFO("$entries_read mutations read from file $cosmic_mutation_file");
+print STDERR "$entries_read mutations read from file $cosmic_mutation_file\n";
 
 # TABLE: filtered-variants.cosmic
 # TABLE: filtered-variants

@@ -52,18 +52,18 @@ make_plot <- function() {
 	stripchart(list(mut$dia, mut$rel), method="jitter", vertical=T, pch=19, col=c("red", "blue"), add=T)
 	
 	# barplot (include outliers)
-	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), las=2, ylab="", ylim=c(0,max(rowSums(bardata.relapsing))), cex.axis=1.5, cex.names=1.5, cex.lab=1.5)
-	abline(h=seq(10, max(rowSums(bardata.relapsing)), by=100), col="gray")
+	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), las=2, yaxt="n", ylim=c(0,max(rowSums(bardata.relapsing))), cex.axis=1.5, cex.names=1.5, cex.lab=1.5)
+	abline(h=seq(0, max(rowSums(bardata.relapsing)), by=100), col="gray")
 	box()
-	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), las=2, ylab="# non-silent mutations", ylim=c(0,max(rowSums(bardata.relapsing))), cex.axis=1.5, cex.names=1.5, cex.lab=1.5, add=T)
+	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), ylab="# non-silent mutations", xaxt="n", ylim=c(0,max(rowSums(bardata.relapsing))), cex.axis=1.5, cex.names=1.5, cex.lab=1.5, add=T)
 	legend(x=1, y=800, bg="white", rev(colnames(bardata.relapsing)), fill=rev(brewer.pal(3, "Set2")), cex=1.5)
 
 	# barplot (cut-off outliers)
 	maxy <- 200
-	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), las=2, ylab="", ylim=c(0,maxy), cex.axis=1.5, cex.names=1.5, cex.lab=1.5)
-	abline(h=seq(10, maxy, by=10), col="gray")
+	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), las=2, yaxt="n", ylim=c(0,maxy), cex.axis=1.5, cex.names=1.5, cex.lab=1.5)
+	abline(h=seq(0, maxy, by=10), col="gray")
 	box()
-	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), las=2, ylab="# non-silent mutations", ylim=c(0,maxy), cex.axis=1.5, cex.names=1.5, cex.lab=1.5, add=T)
+	barplot(t(bardata.relapsing), beside=FALSE, col=brewer.pal(6, "Set2"), ylab="# non-silent mutations", xaxt="n", ylim=c(0,maxy), cex.axis=1.5, cex.names=1.5, cex.lab=1.5, add=T)
 	legend(x=1, y=190, bg="white", rev(colnames(bardata.relapsing)), fill=rev(brewer.pal(3, "Set2")), cex=1.5)
 }
 

@@ -1,7 +1,7 @@
 use warnings FATAL => qw( all );
 use strict;
 
-use lib "$ENV{HOME}/generic/scripts";
+use lib "/mnt/projects/generic/scripts";
 use Generic;
 use Log::Log4perl qw(:easy);
 use List::Util qw(min max);
@@ -100,15 +100,15 @@ croak "ERROR: --evs-file not specified" if (!$evs_file);
 #-----------------------------------------------------------------------
 
 my %patient2sample = (
-	'108_rem' => '108C',					'108_dia' => '108D',					'108_rel' => '108R1',			'108_rel2' => '108R2',
+	'108_rem' => '108C',					'108_dia' => '108D',					'108_rel' => '108R1',			'108_rel2' => '108R2',                      'm1035-108-dia_xeno' => 'M1035_108_Diagnosis',   'm1060-108-rel_xeno' => 'M1060_108_Relapse',
 	'715_rem' => '715_Remission',			'715_dia' => '715_Diagnosis',			'715_rel' => '715_Relapse',		'715_rel3' => '715R3',						'm1957-715-rel_xeno' => 'M1957_715_Relapse1',
-	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',			'737_rel2' => '737R2',						'737_rel3' => '737_Relapse3',
+	'737_rem' => '737C',					'737_dia' => '737D',					'737_rel' => '737R',			'737_rel2' => '737R2',						'737_rel3' => '737_Relapse3',                    'm1041-737-dia_xeno' => 'M1041_737_Diagnosis',   'm1069-737-rel_xeno' => 'M1069_737_Relapse',
 
-	'92_rem' => '92C',						'92_dia' => '92D',						'92_rel' => '92R',
+	'92_rem' => '92C',						'92_dia' => '92D',						'92_rel' => '92R',              'm1059-92-dia_xeno' => 'M1059_92_Diagnosis',
 	'460_rem' => '460_Remission',			'460_dia' => '460_Diagnosis',			'460_rel' => '460_Relapse',
 	'545_rem' => '545_Remission',			'545_dia' => '545_Diagnosis',			'545_rel' => '545_Relapse',		'm1963-545-rel_xeno' => 'm1963_545_Relapse',		'm1964-545-rel_xeno' => 'm1964_545Rn_Relapse',
 	'564_rem' => '564_Remission',			'564_dia' => '564_Diagnosis',			'564_rel' => '564_Relapse',
-	'839_rem' => '839C',					'839_dia' => '839D',					'839_rel' => '839R',
+	'839_rem' => '839C',					'839_dia' => '839D',					'839_rel' => '839R',            'm1037-839-dia_xeno' => 'M1037_839_Diagnosis',
 	'B36_rem' => 'B36C',					'B36_dia' => 'B36D',					'B36_rel' => 'B36R',
 	'BB16_rem' => 'BB16C',					'BB16_dia' => 'BB16D',					'BB16_rel' => 'BB16R',
 	'GI13_rem' => 'GI13C',					'GI13_dia' => 'GI13D',					'GI13_rel' => 'GI13R',
@@ -116,7 +116,7 @@ my %patient2sample = (
 	'HV80_rem' => 'HV80C',					'HV80_dia' => 'HV80D',					'HV80_rel' => 'HV80R',
 	'LU3_rem' => 'LU3C',					'LU3_dia' => 'LU3D',					'LU3_rel' => 'LU3R',
 	'N7_rem' => 'N7C',						'N7_dia' => 'N7D',						'N7_rel' => 'N7R',
-	'S23_rem' => 'S23C',					'S23_dia' => 'S23D',					'S23_rel' => 'S23R',
+	'S23_rem' => 'S23C',					'S23_dia' => 'S23D',					'S23_rel' => 'S23R',			'S23_rel3' => 'S23_RR',
 	'SN18_rem' => 'SN18C',					'SN18_dia' => 'SN18D',					'SN18_rel' => 'SN18R',
 	'DL2_rem' => 'DL2_Remission',			'DL2_dia' => 'DL2_Diagnosis',			'DL2_rel' => '19981_DL2_R_Relapse',
 	'GI8_rem' => 'GI8_Remission',			'GI8_dia' => 'GI8_Diagnosis',			'GI8_rel' => '19551_GI8_R_Relapse',
@@ -130,12 +130,12 @@ my %patient2sample = (
 	'242_rem' => '242C',					'242_dia' => '242D',
 	'360_rem' => '360C',					'360_dia' => '360D',
 	'365_rem' => '365C',					'365_dia' => '365D',
-	'379_rem' => '379C',					'379_dia' => '379D',
+	'379_rem' => '379C',					'379_dia' => '379D',                    'm252-379-dia_xeno' => 'M252_379_Diagnosis',
 	'400_rem' => '400C',					'400_dia' => '400D',
 	'506_rem' => '506C',					'506_dia' => '506D',
 	'769_rem' => '769C',					'769_dia' => '769D',
-	'833_rem' => '833C',					'833_dia' => '833D',
-	'841_rem' => '842_Remission',			'841_dia' => '841_Diagnosis',
+	'833_rem' => '833C',					'833_dia' => '833D',                    'm247-833-dia_xeno' => 'M247_833_Diagnosis',
+	'841_rem' => '842_Remission',			'841_dia' => '841_Diagnosis',           'm248-841-dia_xeno' => 'M248_841_Diagnosis',
 	'948_rem' => '948C',					'948_dia' => '948D',
 	'802_rem' => '802_Remission',			'802_dia' => '802_Diagnosis',
 	'887_rem' => '887_Remission',			'887_dia' => '887_Diagnosis',
@@ -148,21 +148,21 @@ my %patient2sample = (
 	'HW11537_rem' => 'HW11537_Remission',	'HW11537_dia' => 'HW11537_Diagnosis',
 	'KT14158_rem' => 'KT14158_Remission',	'KT14158_dia' => 'KT14158_Diagnosis',
 	'TL14516_rem' => 'TL14516_Remission',	'TL14516_dia' => 'TL14516_Diagnosis',
-	'AL9890_rem' => 'AL9890_Remission',		'AL9890_dia' => 'AL9890_Diagnosis',		'AL9890_rel' => 'AL9890_Relapse',
+	'AL9890_rem' => 'AL9890_Remission',		'AL9890_dia' => 'AL9890_Diagnosis',		'AL9890_rel' => 'AL9890_Relapse',              'AL9890_rel2' => 'AL9890_RR',
 	'GL11356_rem' => 'GL11356_Remisson',	'GL11356_dia' => 'GL11356_Diagnosis',	'GL11356_rel' => 'GL11356_Relapse',
 	
 	'G_rem' => 'G_Remission',				'm1977-G-dia_xeno' => 'm1977_G_Dx_Diagnosis',
-	'Y_rem' => 'Y3767_Remission',			'm1967-Y-rel_xeno' => 'm1967_Y_Relapse'
+	'Y_rem' => 'Y3767_Remission',			'm1966-Y-dia_xeno' => 'M1966_Y_Diagnosis', 'm1967-Y-rel_xeno' => 'm1967_Y_Relapse'
 );
 
 my %patient2cohort = (
-	'108' => 'relapsing', 
-	'92' => 'relapsing', 
+	'108' => 'relapsing',
+	'92' => 'relapsing',
 	'460' => 'relapsing', 
-	'545' => 'relapsing', 'm1963-545-rel_xeno' => 'relapsing', 'm1964-545-rel_xeno' => 'relapsing',
+	'545' => 'relapsing',
 	'564' => 'relapsing', 
-	'715' => 'relapsing', 'm1957-715-rel_xeno' => 'relapsing', 
-	'737' => 'relapsing', 
+	'715' => 'relapsing', 
+	'737' => 'relapsing',
 	'839' => 'relapsing', 
 	'B36' => 'relapsing', 
 	'BB16' => 'relapsing', 
@@ -206,18 +206,28 @@ my %patient2cohort = (
 	'KT14158' => 'non-relapsing',
 	'TL14516' => 'non-relapsing',
 	
-	'm1977-G-dia' => 'HDALL',
-	'm1967-Y-rel' => 'HDALL'
+	'G' => 'HDALL',
+	'Y' => 'HDALL'
 );
 
 my ($patient, $vcf_sample_id_rem, $vcf_sample_id_tum) = $sample_identifier =~ /([^_]+)_([^_]+)_(.*)/ or croak "ERROR: could not parse sample identifier\n";
+
 my $cmp_type = $vcf_sample_id_rem."_".$vcf_sample_id_tum;
-die "ERROR: could not determine cohort for patient $patient\n" if (!$patient2cohort{$patient});
 die "ERROR: invalid comparison type: $cmp_type\n" if ($cmp_type !~ /^(rem_dia|rem_rel\d?|rem_xeno)$/);
 
-$vcf_sample_id_rem = $patient2sample{$patient."_$vcf_sample_id_rem"}; 
+my $cohort = $patient2cohort{$patient};
 $vcf_sample_id_tum = $patient2sample{$patient."_$vcf_sample_id_tum"}; 
 
+# special parsing in case of xenografts
+if ($sample_identifier =~ /xeno/) {
+	my ($mouse, $mouse_patient) = split('-', $patient);
+	$vcf_sample_id_rem = $patient2sample{$mouse_patient."_$vcf_sample_id_rem"};	
+	$cohort = $patient2cohort{$mouse_patient}
+} else {
+	$vcf_sample_id_rem = $patient2sample{$patient."_$vcf_sample_id_rem"}; 
+}
+
+die "ERROR: could not determine cohort for patient $patient\n" if (!$cohort);
 die "ERROR: Could not deduce normal VCF sample ID from provided sample identifier $sample_identifier\n" if (!$vcf_sample_id_rem);
 die "ERROR: Could not deduce tumor VCF sample ID from provided sample identifier $sample_identifier\n" if (!$vcf_sample_id_tum);
 
@@ -613,7 +623,7 @@ while (my $line = $vcf->next_line())
 	
 	print "$patient\t";		
 	print "$cmp_type\t";
-	print $patient2cohort{$patient}, "\t";
+	print "$cohort\t";
 	print "$var_type\t";
 	print @rejected_because > 0 ? "REJECT\t" : "$status\t";
 	print @rejected_because > 0 ? join(";", @rejected_because) : "", "\t";

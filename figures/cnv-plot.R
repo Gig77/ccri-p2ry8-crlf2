@@ -11,7 +11,7 @@ sizes$offset <- cumsum(sizes$size) - sizes$size
 s <- read.delim("/mnt/projects/p2ry8-crlf2/results/patient_sex.tsv")
 
 # cohorts
-samples.matched <- c("DL2D", "DL2R", "108D", "108R", "108R2", "GI8D", "GI8R", "HV80D", "HV80R","N7D", "N7R", "DS10898D", "DS10898R", "VS14645D", "VS14645R", "BB16D", "BB16R", "SE15285D", "SE15285R", "715D", "715R", "715R3", "839D", "839R", "AL9890D", "AL9890R", "GL11356D", "GL11356R", "GI13D", "GI13R", "B36D", "B36R", "92D", "92R", "HV57D", "HV57R", "737D", "737R", "737R3", "KE17247D", "KE17247R", "S23D", "S23R", "1060D", "BJ17183D")
+samples.matched <- c("DL2D", "DL2R", "108D", "108R", "108R2", "GI8D", "GI8R", "HV80D", "HV80R","N7D", "N7R", "DS10898D", "DS10898R", "VS14645D", "VS14645R", "BB16D", "BB16R", "SE15285D", "SE15285R", "715D", "715R", "715R3", "839D", "839R", "AL9890D", "AL9890R", "AL9890R2", "GL11356D", "GL11356R", "GI13D", "GI13R", "B36D", "B36R", "92D", "92R", "HV57D", "HV57R", "737D", "737R", "737R3", "KE17247D", "KE17247R", "S23D", "S23R", "1060D", "BJ17183D")
 cases.matched <- unique(gsub("(D|R\\d?)$", "", samples.matched))
 samples.diaonly <- c("242D", "360D", "365D", "379D", "400D", "506D", "769D", "802D", "833D", "887D", "841D", "903D", "948D", "961D", "1066D", "1089D", "HW11537D", "KT14158D", "TL14516D")
 samples.mlpa <- c("1060D", "1066D", "1089D", "108D", "108R", "242D", "360D", "365D", "460D", "460R", "545D", "545R", "737R", "769D", "802D", "833D", "839D", "887D", "903D", "948D", "957D", "961D", "B36R", "BB16D", "BB16R", "DL2D", "DL2R", "DS10898D", "DS10898R", "GI13R", "GI8D", "HV57D", "HV57R", "HV80D", "HV80R", "KE17247R", "KT14158D", "SE15285D", "SE15285R", "SN18D", "SN18R", "VS14645D", "VS14645R", "564D", "715D", "715R", "GI8R")

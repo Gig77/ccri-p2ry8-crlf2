@@ -8,12 +8,12 @@ LOG = perl -ne 'use POSIX qw(strftime); $$|=1; print strftime("%F %02H:%02M:%S "
 PATIENTS_TEST = 92
 PATIENTS_MATCHED = 108 92 460 545 564 715 737 839 B36 BB16 DL2 GI8 GI13 HV57 HV80 LU3 MA5 N7 S23 SN18 DS10898 VS14645 SE15285 BJ17183 KE17247 AL9890 GL11356
 PATIENTS_DIA_ONLY = 242 360 365 379 400 506 769 802 833 887 841 903 948 957 961 1060 1066 1089 HW11537 KT14158 TL14516
-PATIENTS_REL2 = 108 737
-PATIENTS_REL3 = 715 737
-PATIENTS_XENO = m1963-545-rel m1964-545-rel m1957-715-rel m1977-G-dia m1967-Y-rel
+PATIENTS_REL2 = 108 737 AL9890
+PATIENTS_REL3 = 715 737 S23
+PATIENTS_XENO = m1963-545-rel m1964-545-rel m1957-715-rel m1035-108-dia m1060-108-rel m252-379-dia m1041-737-dia m1069-737-rel m247-833-dia m1059-92-dia m1037-839-dia m248-841-dia m1977-G-dia m1967-Y-rel m1966-Y-dia
 
 #all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xenografts.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf exome-coverage/coverage-plots-exome.png coverage-chr21/allpatients.coverage-chr21.pdf picard loh snp-comparison/allsamples.snp-comparison.tsv
+all: snp fastqc gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xenografts.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf coverage-chr21/allpatients.coverage-chr21.pdf picard loh snp-comparison/allsamples.snp-comparison.tsv figures impacted-genes.tsv
 
 #-----------
 # DOWNLOAD
@@ -26,6 +26,8 @@ all: gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xeno
 #wget -r -np -e robots=off --accept *715*,*460*,*564*,*545* --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0003_HDBALL_1ca2f4fb9c73e5eb3986819f818f8acb/
 #wget -r -np -e robots=off --accept *AL9890*,*GL11356*,*737_Relapse3* --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_zahyee0Zooxiphoogo5ooMee3mai8uy8/
 #wget -r -np -e robots=off --accept *M1957*,*m1963*,*m1964*,*m1967*,*m1977* --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/
+#wget -r -np -e robots=off --accept *AL9890*,*S23*,*M248*,*M247*,*M252*,*M1059*,*M1060*,*M1069*,*M1035*,*M1037*,*M1041* --reject *.wig --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/  // PC mouse xenografts, AL9890 2nd relapse, S23 3rd relapse, downloaded Aug 26th, 2015
+#wget -r -np -e robots=off --accept *M1966* --reject *.wig --limit-rate=1500k http://www.biomedical-sequencing.at/projects/BSA_0003_HDBALL_eb8f0fe088814dcd95e115a3f4ac2e74/  // mouse xeonograft from HD case Y (diagnosis), downloaded Aug 26th, 2015
 
 /mnt/projects/p2ry8-crlf2/data/mutect_somatic_mutations_hg19/%_calls.vcf: /mnt/projects/p2ry8-crlf2/data/mutect_somatic_mutations/%_calls.vcf
 	cat $< | perl -ne 's/^([\dXY])/chr$$1/; s/^MT/chrM/; print $$_;' > $@.part
@@ -34,7 +36,35 @@ all: gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xeno
 /mnt/projects/p2ry8-crlf2/data/mutect_somatic_indels_hg19/%_indel.vcf: /mnt/projects/p2ry8-crlf2/data/mutect_somatic_indels/%_indel.vcf
 	cat $< | perl -ne 's/^([\dXYM])/chr$$1/; print $$_;' > $@.part
 	mv $@.part $@
+	
+# concatenate mutation and indel VCFs for samples sequenced in a later batch (because CeMM did not do it as for the previous batch)
+#-----
 
+/mnt/projects/p2ry8-crlf2/data/mutect/m1966-Y-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0003_HDBALL_eb8f0fe088814dcd95e115a3f4ac2e74/variant_calling_somatic_Y3767_Remission__M1966_Y_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0003_HDBALL_eb8f0fe088814dcd95e115a3f4ac2e74/variant_calling_somatic_Y3767_Remission__M1966_Y_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m1035-108-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_108C__M1035_108_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_108C__M1035_108_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m1060-108-rel_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_108C__M1060_108_Relapse_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_108C__M1060_108_Relapse_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m252-379-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_379C__M252_379_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_379C__M252_379_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m1041-737-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_737C__M1041_737_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_737C__M1041_737_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m1069-737-rel_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_737C__M1069_737_Relapse_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_737C__M1069_737_Relapse_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m247-833-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_833C__M247_833_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_833C__M247_833_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m1037-839-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_839C__M1037_839_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_839C__M1037_839_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m248-841-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_842_Remission__M248_841_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_842_Remission__M248_841_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/m1059-92-dia_rem_xeno.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_92C__M1059_92_Diagnosis_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_92C__M1059_92_Diagnosis_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/AL9890_rem_rel2.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_AL9890_Remission__AL9890_RR_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_AL9890_Remission__AL9890_RR_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+/mnt/projects/p2ry8-crlf2/data/mutect/S23_rem_rel3.somatic.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_S23C__S23_RR_mutations.vcf /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_b4e692fc2393447aadea66b2bfeb2863/variant_calling_somatic_S23C__S23_RR_indels.vcf
+	(head -1 $(word 1, $^); grep ^## $(word 1, $^) | tail -n +2; grep ^## $(word 2, $^) | tail -n +2; grep ^#CHROM $(word 1, $^); grep -v ^# $(word 1, $^); grep -v ^# $(word 2, $^)) > $@
+	
 #-----------
 # REMISSION VARIANTS
 #-----------
@@ -49,7 +79,7 @@ remission-variants.tsv.gz: remission-variants.tsv
 	mv $@.part $@
 
 remission-variants.tsv.gz.tbi: remission-variants.tsv.gz
-	~/tools/tabix-0.2.6/tabix $^ -s 2 -b 3 -e 3
+	/data_synology/software/tabix-0.2.6/tabix $^ -s 2 -b 3 -e 3
 
 remission-variants/%.remission-variants.tsv: /mnt/projects/p2ry8-crlf2/data/mutect/%_rem_dia.somatic.vcf /mnt/projects/p2ry8-crlf2/scripts/create-normal-vcf.pl
 	mkdir -p remission-variants 
@@ -62,7 +92,7 @@ remission-variants/%.remission-variants.tsv: /mnt/projects/p2ry8-crlf2/data/mute
 #-----------	
 snpeff/%.dbsnp.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/%.vcf /mnt/projects/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar annotate \
+	(cd /data_synology/software/snpeff-3.6; java -jar SnpSift.jar annotate \
 		-v /mnt/projects/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf \
 		<(cat $< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
@@ -71,12 +101,12 @@ snpeff/%.dbsnp.vcf: /mnt/projects/p2ry8-crlf2/data/mutect/%.vcf /mnt/projects/ge
 
 snpeff/%.dbsnp.snpeff.vcf: snpeff/%.dbsnp.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -Xmx4g -jar snpEff.jar -v -lof GRCh37.75 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	(cd /data_synology/software/snpeff-3.6; java -Xmx4g -jar snpEff.jar -v -lof GRCh37.75 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
 
 snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf /mnt/projects/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar dbnsfp \
+	(cd /data_synology/software/snpeff-3.6; java -jar SnpSift.jar dbnsfp \
 		-v /mnt/projects/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz \
 		-collapse \
 		-f SIFT_pred,SIFT_score,Polyphen2_HVAR_pred,Polyphen2_HVAR_score,SiPhy_29way_logOdds,LRT_pred,LRT_score,MutationTaster_pred,MutationTaster_score,MutationAssessor_pred,MutationAssessor_score,FATHMM_pred,FATHMM_score,RadialSVM_pred,RadialSVM_score,GERP++_RS,1000Gp1_AF,1000Gp1_AFR_AF,1000Gp1_EUR_AF,1000Gp1_AMR_AF,1000Gp1_ASN_AF,ESP6500_AA_AF,ESP6500_EA_AF,Uniprot_acc,Interpro_domain, \
@@ -88,14 +118,15 @@ snpeff/%.dbsnp.snpeff.dbNSFP.vcf: snpeff/%.dbsnp.snpeff.vcf /mnt/projects/generi
 #-------------
 
 .PHONY: fastqc
-fastqc: $(foreach P, $(PATIENTS_MATCHED), fastqc/$PC.fastqc.html fastqc/$PD.fastqc.html fastqc/$PR.fastqc.html) \
-        $(foreach P, $(PATIENTS_DIA_ONLY), fastqc/$PC.fastqc.html fastqc/$PD.fastqc.html) \
-		$(foreach P, $(PATIENTS_REL2), fastqc/$PR2.fastqc.html) \
-		$(foreach P, $(PATIENTS_REL3), fastqc/$PR3.fastqc.html)
+fastqc: $(foreach P, $(PATIENTS_MATCHED), fastqc/variant_calling_process_sample_$PC_realigned_fastqc.html fastqc/variant_calling_process_sample_$PD_realigned_fastqc.html fastqc/variant_calling_process_sample_$PR_realigned_fastqc.html) \
+        $(foreach P, $(PATIENTS_DIA_ONLY), fastqc/variant_calling_process_sample_$PC_realigned_fastqc.html fastqc/variant_calling_process_sample_$PD_realigned_fastqc.html) \
+		$(foreach P, $(PATIENTS_REL2), fastqc/variant_calling_process_sample_$PR2_realigned_fastqc.html) \
+		$(foreach P, $(PATIENTS_REL3), fastqc/variant_calling_process_sample_$PR3_realigned_fastqc.html) \
+		$(foreach P, $(PATIENTS_XENO), fastqc/variant_calling_process_sample_$P_realigned_fastqc.html)
 	
-fastqc/%.fastqc.html: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
+fastqc/variant_calling_process_sample_%_realigned_fastqc.html: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p fastqc/$*.part
-	~/tools/FastQC/fastqc -o fastqc/$*.part -f bam $^
+	/data_synology/software/FastQC-0.11.2/fastqc -o fastqc/$*.part -f bam $^
 	mv fastqc/$*.part/* fastqc
 	rmdir fastqc/$*.part
 
@@ -150,7 +181,7 @@ coverage-region: coverage-region/allpatients.PAR1-X-60001-2699520.pdf \
 		  coverage-region/allpatients.GABRB3-15-25870574-27936343.pdf
 		  
 coverage-region/%.exon-coverage.tsv: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
-	~/tools/samtools-0.1.19/samtools depth \
+	/data_synology/software/samtools-0.1.19/samtools depth \
 		-Q 1 \
 		-b /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed \
 		$< \
@@ -225,7 +256,7 @@ coverage-genome/allpatients.coverage-genome.pdf: $(foreach P, $(PATIENTS_MATCHED
 								    		     $(foreach P, $(PATIENTS_DIA_ONLY), coverage-genome/$PD.coverage-genome.pdf) \
 								    		     $(foreach P, $(PATIENTS_REL2), coverage-genome/$PR2.coverage-genome.pdf) \
 								    		     $(foreach P, $(PATIENTS_REL3), coverage-genome/$PR3.coverage-genome.pdf) \
-								    		     $(foreach P, $(PATIENTS_XENO), coverage-genome/$P.coverage-genome.pdf)
+								    		     $(foreach P, $(PATIENTS_XENO), coverage-genome/$P.xeno.coverage-genome.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
 	rm $^
@@ -270,59 +301,19 @@ coverage-genome/%R3.coverage-genome.pdf: coverage-genome/%R3.coverage-genome.tsv
 		--output $@.part
 	mv $@.part $@
 
-coverage-genome/m1963-545-rel.coverage-genome.pdf: coverage-genome/m1963-545-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv
+coverage-genome/%.xeno.coverage-genome.pdf: coverage-genome/%.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv
 	mkdir -p coverage-genome/circos
 	Rscript /mnt/projects/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient m1963-545-rel \
+		--patient $* \
 		--tumor $(word 1,$^) \
 		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/m1963-545-rel.cnv.circos.tsv \
-		--output $@.part
-	mv $@.part $@
-
-coverage-genome/m1964-545-rel.coverage-genome.pdf: coverage-genome/m1964-545-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv
-	mkdir -p coverage-genome/circos
-	Rscript /mnt/projects/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient m1964-545-rel \
-		--tumor $(word 1,$^) \
-		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/m1964-545-rel.cnv.circos.tsv \
-		--output $@.part
-	mv $@.part $@
-
-coverage-genome/m1957-715-rel.coverage-genome.pdf: coverage-genome/m1957-715-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv
-	mkdir -p coverage-genome/circos
-	Rscript /mnt/projects/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient m1957-715-rel \
-		--tumor $(word 1,$^) \
-		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/m1957-715-rel.cnv.circos.tsv \
-		--output $@.part
-	mv $@.part $@
-
-coverage-genome/m1977-G-dia.coverage-genome.pdf: coverage-genome/m1977-G-dia.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv
-	mkdir -p coverage-genome/circos
-	Rscript /mnt/projects/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient m1977-G-dia \
-		--tumor $(word 1,$^) \
-		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/m1977-G-dia.cnv.circos.tsv \
-		--output $@.part
-	mv $@.part $@
-
-coverage-genome/m1967-Y-rel.coverage-genome.pdf: coverage-genome/m1967-Y-rel.coverage-genome.tsv coverage-genome/839C.coverage-genome.tsv
-	mkdir -p coverage-genome/circos
-	Rscript /mnt/projects/hdall/scripts/cnv/plot-segment-coverage.R \
-		--patient m1967-Y-rel \
-		--tumor $(word 1,$^) \
-		--normal $(word 2,$^) \
-		--circos coverage-genome/circos/m1967-Y-rel.cnv.circos.tsv \
+		--circos coverage-genome/circos/$*.cnv.circos.tsv \
 		--output $@.part
 	mv $@.part $@
 
 coverage-genome/%.coverage-genome.tsv: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p coverage-genome
-	~/tools/samtools-0.1.19/samtools depth -Q 1 $< \
+	/data_synology/software/samtools-0.1.19/samtools depth -Q 1 $< \
 		| perl /mnt/projects/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
@@ -346,21 +337,6 @@ coverage-chr21/%C.coverage-chr21.pdf: coverage-genome/%C.coverage-genome.tsv cov
 	mv $@.part $@
 
 #-------------
-# EXOME COVERAGE PLOT (CURVE)
-#-------------
-
-figures/coverage.png: $(foreach P, $(PATIENTS_MATCHED), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PR.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
-               					   $(foreach P, $(PATIENTS_DIA_ONLY), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
-								   $(foreach P, $(PATIENTS_REL2), exome-coverage/$PR2.coverage.bedtools.txt) \
-								   $(foreach P, $(PATIENTS_REL3), exome-coverage/$PR3.coverage.bedtools.txt) \
-               					   /mnt/projects/p2ry8-crlf2/scripts/coverage-plot.R
-	Rscript /mnt/projects/p2ry8-crlf2/scripts/coverage-plot.R
-
-exome-coverage/%.coverage.bedtools.txt: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /mnt/projects/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed
-	~/tools/samtools-0.1.19/samtools view -bq 1 -F 0x400 $< | bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
-	mv $@.part $@
-
-#-------------
 # final lists
 #-------------
 filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_rem_dia.filtered.tsv filtered-variants/$P_rem_rel.filtered.tsv) \
@@ -377,14 +353,14 @@ filtered-variants.xenografts.tsv: $(foreach P, $(PATIENTS_XENO), filtered-varian
 	cat $(filter-out $(lastword $^), $^) >> $@.part
 	mv $@.part $@
 
-%.cosmic.tsv: %.tsv /mnt/projects/generic/data/cosmic/v67/CosmicMutantExport_v67_241013.tsv /mnt/projects/p2ry8-crlf2/scripts/annotate-cosmic.pl
+%.cosmic.tsv: %.tsv /mnt/projects/generic/data/cosmic/v73/CosmicMutantExport.tsv /mnt/projects/p2ry8-crlf2/scripts/annotate-cosmic.pl
 	cat $(word 1,$^) | perl /mnt/projects/p2ry8-crlf2/scripts/annotate-cosmic.pl \
 		--cosmic-mutation-file $(word 2,$^) \
 		--only-confirmed \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@ 
 	
-filtered-variants.cosmic.merged.tsv: filtered-variants.cosmic.tsv
+filtered-variants.cosmic.merged.tsv: filtered-variants.cosmic.tsv filtered-variants.xenografts.tsv
 	Rscript /mnt/projects/p2ry8-crlf2/scripts/merge-filtered-variants.R 2>&1 | $(LOG)
 
 filtered-variants/%.filtered.tsv: snpeff/%.somatic.dbsnp.snpeff.dbNSFP.vcf /mnt/projects/hdall/results/curated-recected-variants.tsv remission-variants.tsv.gz.tbi /mnt/projects/p2ry8-crlf2/scripts/filter-variants.pl
@@ -418,9 +394,32 @@ gene-patient-matrix.tsv: filtered-variants.tsv /mnt/projects/p2ry8-crlf2/scripts
 # FIGURES
 #----------------
 
+.PHONY: figures
+figures: figures/mutations-per-patient.pdf figures/cnv-plot-relapsing.pdf figures/cnv-plot-nonrelapsing.pdf figures/coverage.png figures/signaling-barplot.non-relapsing.pdf figures/signaling-barplot.matched.pdf figures/af-plot.pdf
+
 figures/mutations-per-patient.pdf: filtered-variants.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/mutations-per-patient.R
 	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/mutations-per-patient.R
+
+figures/cnv-plot-relapsing.pdf figures/cnv-plot-nonrelapsing.pdf: exomeCopy/allpatients.filtered-segments.exomeCopy.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/cnv-plot.R
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/cnv-plot.R
+
+figures/signaling-barplot.non-relapsing.pdf figures/signaling-barplot.matched.pdf: hotspot-mutations.tsv filtered-variants.cosmic.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/signaling-barplot.R
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/signaling-barplot.R
+
+figures/af-plot.pdf: filtered-variants.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/af-plot.R
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/af-plot.R
 	
+figures/coverage.png: $(foreach P, $(PATIENTS_MATCHED), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PR.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
+               					   $(foreach P, $(PATIENTS_DIA_ONLY), exome-coverage/$PD.coverage.bedtools.txt exome-coverage/$PC.coverage.bedtools.txt) \
+								   $(foreach P, $(PATIENTS_REL2), exome-coverage/$PR2.coverage.bedtools.txt) \
+								   $(foreach P, $(PATIENTS_REL3), exome-coverage/$PR3.coverage.bedtools.txt) \
+               					   /mnt/projects/p2ry8-crlf2/scripts/figures/coverage-plot.R
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/coverage-plot.R
+
+exome-coverage/%.coverage.bedtools.txt: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /mnt/projects/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed
+	/data_synology/software/samtools-0.1.19/samtools view -bq 1 -F 0x400 $< | /data_synology/software/bedtools-2.17.0/bin/bedtools coverage -hist -abam - -b $(word 2, $^) | grep ^all > $@.part
+	mv $@.part $@
+		
 #----------------
 # PICARD
 #----------------
@@ -429,17 +428,25 @@ figures/mutations-per-patient.pdf: filtered-variants.tsv /mnt/projects/p2ry8-crl
 picard: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out picard/$PR.picard.insertsize.out) \
         $(foreach P, $(PATIENTS_DIA_ONLY), picard/$PC.picard.insertsize.out picard/$PD.picard.insertsize.out) \
 		$(foreach P, $(PATIENTS_REL2), picard/$PR2.picard.insertsize.out) \
-		$(foreach P, $(PATIENTS_REL3), picard/$PR3.picard.insertsize.out)
+		$(foreach P, $(PATIENTS_REL3), picard/$PR3.picard.insertsize.out) \
+		$(foreach P, $(PATIENTS_XENO), picard/$P.picard.insertsize.out) \
+		picard/second_batch.insertsize.pdf
 
-picard/%.picard.insertsize.out: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar
+picard/%.picard.insertsize.out picard/%.picard.insertsize.pdf: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data_synology/software/picard-tools-1.114/CollectInsertSizeMetrics.jar
 	mkdir -p picard
-	java -jar ~/tools/picard-tools-1.114/CollectInsertSizeMetrics.jar \
+	java -jar /data_synology/software/picard-tools-1.114/CollectInsertSizeMetrics.jar \
 		INPUT=$< \
-		HISTOGRAM_FILE=picard/$*.picard.insertsize.pdf \
-		OUTPUT=$@.part \
+		HISTOGRAM_FILE=picard/$*.picard.insertsize.pdf.part \
+		OUTPUT=picard/$*.picard.insertsize.out.part \
 		STOP_AFTER=10000000
+	mv picard/$*.picard.insertsize.pdf.part picard/$*.picard.insertsize.pdf
+	mv picard/$*.picard.insertsize.out.part picard/$*.picard.insertsize.out
+
+picard/second_batch.insertsize.pdf: $(foreach P, m1966-Y-dia m1035-108-dia m1060-108-rel m252-379-dia m1041-737-dia m1069-737-rel m247-833-dia m1059-92-dia m1037-839-dia m248-841-dia AL9890R2 S23R3, picard/$P.picard.insertsize.pdf)
+	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@
-	
+	rm $^
+
 #---------------
 # PINDEL
 #---------------
@@ -458,8 +465,8 @@ pindel/pindel.cfg: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsiz
 #	grep -A 1 MEDIAN_INSERT_SIZE $^ | perl -ne 'if (/\/([^\.]+)\.picard.insertsize.out-(\d+)/) { print "/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_$$1_realigned.bam\t$$2\t$$1\n"; }' > $@.part 
 #	mv $@.part $@ 
 
-pindel/chr%_D: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel /mnt/projects/generic/data/broad/hs37d5.fa
-	~/tools/pindel-0.2.4w/pindel \
+pindel/chr%_D: pindel/pindel.cfg /data_synology/software/pindel-0.2.4w/pindel /mnt/projects/generic/data/broad/hs37d5.fa
+	/data_synology/software/pindel-0.2.4w/pindel \
 		--fasta /mnt/projects/generic/data/broad/hs37d5.fa \
 		--config-file pindel/pindel.cfg \
 		--chromosome $* \
@@ -480,20 +487,20 @@ pindel/chr%_D: pindel/pindel.cfg ~/tools/pindel-0.2.4w/pindel /mnt/projects/gene
 pindel/allsamples_SI pindel/allsamples_LI pindel/allsamples_TD: pindel/allsamples_D
 
 pindel/allsamples.combined.filtered.vcf: $(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_D.vcf pindel/chr$C_SI.vcf) /mnt/projects/p2ry8-crlf2/scripts/filter-pindel.pl
-	~/tools/vcftools_0.1.10/bin/vcf-concat \
+	/data_synology/software/vcftools_0.1.10/bin/vcf-concat \
 		$(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_D.vcf) \
 		$(foreach C, 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 X Y, pindel/chr$C_SI.vcf) \
 	| perl /mnt/projects/p2ry8-crlf2/scripts/filter-pindel.pl --vcf-in /dev/stdin \
-	| ~/tools/vcftools_0.1.10/bin/vcf-sort > $@.part
+	| /data_synology/software/vcftools_0.1.10/bin/vcf-sort > $@.part
 	mv $@.part $@
 
 pindel/%.vcf: pindel/%
-	~/tools/pindel-0.2.4w/pindel2vcf -p $< -r /mnt/projects/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v $@.part
+	/data_synology/software/pindel-0.2.4w/pindel2vcf -p $< -r /mnt/projects/generic/data/broad/hs37d5.fa -R hs37d5.fa -d 2011-07-01 --both_strands_supported -v $@.part
 	mv $@.part $@
 
 pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filtered.vcf /mnt/projects/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar annotate \
+	(cd /data_synology/software/snpeff-3.6; java -jar SnpSift.jar annotate \
 		-v /mnt/projects/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf \
 		<(cat /mnt/projects/p2ry8-crlf2/results/$< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)
@@ -502,12 +509,12 @@ pindel/allsamples.combined.filtered.dbsnp.vcf: pindel/allsamples.combined.filter
 
 pindel/allsamples.combined.filtered.dbsnp.snpeff.vcf: pindel/allsamples.combined.filtered.dbsnp.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -Xmx4g -jar snpEff.jar -v -lof GRCh37.75 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
+	(cd /data_synology/software/snpeff-3.6; java -Xmx4g -jar snpEff.jar -v -lof GRCh37.75 -stats $(PWD)/snpeff/$*.snpeff.summary.html $(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
 
 pindel/allsamples.combined.filtered.dbsnp.snpeff.dbNSFP.vcf: pindel/allsamples.combined.filtered.dbsnp.snpeff.vcf
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -jar SnpSift.jar dbnsfp -v /mnt/projects/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz -collapse \
+	(cd /data_synology/software/snpeff-3.6; java -jar SnpSift.jar dbnsfp -v /mnt/projects/generic/data/dbNSFP-2.6/dbNSFP2.6_variant.tsv.gz -collapse \
 		-f SIFT_pred,SIFT_score,Polyphen2_HVAR_pred,Polyphen2_HVAR_score,SiPhy_29way_logOdds,LRT_pred,LRT_score,MutationTaster_pred,MutationTaster_score,MutationAssessor_pred,MutationAssessor_score,FATHMM_pred,FATHMM_score,RadialSVM_pred,RadialSVM_score,GERP++_RS,1000Gp1_AF,1000Gp1_AFR_AF,1000Gp1_EUR_AF,1000Gp1_AMR_AF,1000Gp1_ASN_AF,ESP6500_AA_AF,ESP6500_EA_AF,Uniprot_acc,Interpro_domain, \
 		$(PWD)/$< 2>&1 1>$(PWD)/$@.part) | $(LOG)
 	mv $@.part $@
@@ -524,13 +531,18 @@ pindel/allsamples.pindel.tsv: pindel/allsamples.combined.filtered.dbsnp.snpeff.d
 #---------------
 .PHONY: xenome
 xenome: $(foreach P, $(PATIENTS_XENO), xenome/$P.xenome.txt)
-xenome/%.xenome.txt: 
+xenome/%.xenome.txt: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p xenome
-	(cd /data/NGS/xenome ; ./xenome classify \
+	(cd /home/cf/tools/xenome ; ./xenome classify \
 		-v -T 8 -P idx \
 		--dont-write-reads \
-		-i <(java -jar ~/tools/picard-tools-1.114/SamToFastq.jar VALIDATION_STRINGENCY=SILENT INPUT=/mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_$*_realigned.bam FASTQ=/dev/stdout SECOND_END_FASTQ=/dev/null) \
-		--output-filename-prefix $*) > /mnt/projects/p2ry8-crlf2/results/$@.part
+		-i <(java -jar /data_synology/software/picard-tools-1.114/SamToFastq.jar \
+				VALIDATION_STRINGENCY=SILENT \
+				INPUT=$<
+				FASTQ=/dev/stdout \
+				SECOND_END_FASTQ=/dev/null) \
+		--output-filename-prefix $* \
+	) 2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
 #-----------	
@@ -544,7 +556,7 @@ snp-profile/allsamples.loh-segments.tsv: $(foreach P, $(PATIENTS_MATCHED), snp-p
 	 									 $(foreach P, $(PATIENTS_DIA_ONLY), snp-profile/$PD.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
 	 									 $(foreach P, $(PATIENTS_REL2), snp-profile/$PR2.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
 	 									 $(foreach P, $(PATIENTS_REL3), snp-profile/$PR3.snp-profile.pdf snp-profile/$PC.snp-profile.pdf) \
-	 									 $(foreach P, $(PATIENTS_XENO), snp-profile/$P.snp-profile.pdf)
+	 									 $(foreach P, $(PATIENTS_XENO), snp-profile/$P.xeno.snp-profile.pdf)
 	{ head -n1 snp-profile/839D.loh-segments.tsv; for f in snp-profile/*.loh-segments.tsv; do tail -n+2 "$$f"; done; } > $@.part
 	mv $@.part $@
 		
@@ -557,43 +569,19 @@ snp-profile/%.snp-profile.pdf: coverage-genome/%.coverage-genome.tsv coverage-ge
 	mv $@.part $@
 	mv snp-profile/$*.loh-segments.tsv.part snp-profile/$*.loh-segments.tsv
 
-snp-profile/m1977-G-dia.snp-profile.pdf: coverage-genome/m1977-G-dia.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1977-G-dia.varscan.dbsnp.vcf /mnt/projects/generic/scripts/snp-profile.R
+snp-profile/%.xeno.snp-profile.pdf: coverage-genome/%.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/%.varscan.dbsnp.vcf /mnt/projects/generic/scripts/snp-profile.R
 	mkdir -p snp-profile
-	Rscript /mnt/projects/generic/scripts/snp-profile.R --sample-id m1977-G-dia --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1977-G-dia.loh-segments.tsv.part
+	Rscript /mnt/projects/generic/scripts/snp-profile.R --sample-id $* --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/$*.xeno.loh-segments.tsv.part
 	mv $@.part $@
-	mv snp-profile/m1977-G-dia.loh-segments.tsv.part snp-profile/m1977-G-dia.loh-segments.tsv
-
-snp-profile/m1963-545-rel.snp-profile.pdf: coverage-genome/m1963-545-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1963-545-rel.varscan.dbsnp.vcf /mnt/projects/generic/scripts/snp-profile.R
-	mkdir -p snp-profile
-	Rscript /mnt/projects/generic/scripts/snp-profile.R --sample-id m1963-545-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1963-545-rel.loh-segments.tsv.part
-	mv $@.part $@
-	mv snp-profile/m1963-545-rel.loh-segments.tsv.part snp-profile/m1963-545-rel.loh-segments.tsv
-
-snp-profile/m1967-Y-rel.snp-profile.pdf: coverage-genome/m1967-Y-rel.coverage-genome.tsv coverage-genome/839C.coverage-genome.tsv varscan/m1967-Y-rel.varscan.dbsnp.vcf /mnt/projects/generic/scripts/snp-profile.R
-	mkdir -p snp-profile
-	Rscript /mnt/projects/generic/scripts/snp-profile.R --sample-id m1967-Y-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1967-Y-rel.loh-segments.tsv.part
-	mv $@.part $@
-	mv snp-profile/m1967-Y-rel.loh-segments.tsv.part snp-profile/m1967-Y-rel.loh-segments.tsv
-
-snp-profile/m1964-545-rel.snp-profile.pdf: coverage-genome/m1964-545-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1964-545-rel.varscan.dbsnp.vcf /mnt/projects/generic/scripts/snp-profile.R
-	mkdir -p snp-profile
-	Rscript /mnt/projects/generic/scripts/snp-profile.R --sample-id m1964-545-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1964-545-rel.loh-segments.tsv.part
-	mv $@.part $@
-	mv snp-profile/m1964-545-rel.loh-segments.tsv.part snp-profile/m1964-545-rel.loh-segments.tsv
-
-snp-profile/m1957-715-rel.snp-profile.pdf: coverage-genome/m1957-715-rel.coverage-genome.tsv coverage-genome/948C.coverage-genome.tsv varscan/m1957-715-rel.varscan.dbsnp.vcf /mnt/projects/generic/scripts/snp-profile.R
-	mkdir -p snp-profile
-	Rscript /mnt/projects/generic/scripts/snp-profile.R --sample-id m1957-715-rel --tumor-coverage $(word 1, $+) --normal-coverage $(word 2, $+) --tumor-vcf $(word 3, $+) --disomic-chromosome chr2 --plot-output-file $@.part --loh-segments-output-file snp-profile/m1957-715-rel.loh-segments.tsv.part
-	mv $@.part $@
-	mv snp-profile/m1957-715-rel.loh-segments.tsv.part snp-profile/m1957-715-rel.loh-segments.tsv
+	mv snp-profile/$*.xeno.loh-segments.tsv.part snp-profile/$*.xeno.loh-segments.tsv
 
 varscan/%.varscan.vcf: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p varscan
 	# -q 10 : remove non-uniquely mapping reads and reads with low mapping quality
 	# -F 1024 : remove PCR and optical duplicates
 	# -f 2 : only reads mapped in proper pairs
-	java -XX:+UseParallelGC -XX:ParallelGCThreads=8 -jar ~/tools/varscan-2.3.6/VarScan.v2.3.6.jar mpileup2cns \
-		<(~/tools/samtools-0.1.19/samtools view -u -q 10 -F 1024 -f 2 $(word 1,$^) | ~/tools/samtools-0.1.19/samtools mpileup -f /mnt/projects/generic/data/broad/human_g1k_v37.fasta -) \
+	java -XX:+UseParallelGC -XX:ParallelGCThreads=8 -jar /data_synology/software/varscan-2.3.6/VarScan.v2.3.6.jar mpileup2cns \
+		<(/data_synology/software/samtools-0.1.19/samtools view -u -q 10 -F 1024 -f 2 $(word 1,$^) | /data_synology/software/samtools-0.1.19/samtools mpileup -f /mnt/projects/generic/data/broad/human_g1k_v37.fasta -) \
 		--min-coverage 8 \
 		--min-reads2 4 \
 		--min-avg-qual 20 \
@@ -609,7 +597,7 @@ varscan/%.varscan.vcf: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_proces
 varscan/%.varscan.dbsnp.vcf: varscan/%.varscan.vcf /mnt/projects/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf
 	mkdir -p snpeff
 	PWD=$(pwd)
-	(cd ~/tools/snpEff-3.6; java -XX:+UseParallelGC -XX:ParallelGCThreads=8 -jar SnpSift.jar annotate \
+	(cd /data_synology/software/snpeff-3.6; java -XX:+UseParallelGC -XX:ParallelGCThreads=8 -jar SnpSift.jar annotate \
 		-v /mnt/projects/generic/data/ncbi/common_no_known_medical_impact_20140826.vcf \
 		<(cat $(PWD)/$< | perl -ne 's/\trs\d+\t/\t.\t/; print $$_;' -) \
 		2>&1 1>$(PWD)/$@.part) | $(LOG)

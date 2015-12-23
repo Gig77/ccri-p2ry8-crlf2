@@ -1,16 +1,22 @@
 #library("RColorBrewer")
 #X11.options(type="Xlib")
 
-#p <- "737" ; sample.RR <- "rem_rel3" ; exclude.chr <- c("X", "Y") ; genes.to.label <- c("CREBBP", "KRAS", "NRAS", "FLT3", "PTPN11", "FGFR2", "EPHA5")
-p <- "108" ; sample.RR <- "rem_rel2" ; exclude.chr <- NA ; genes.to.label <- c("JAK2", "KMT2D", "BIRC6", "NBEA", "GNAQ", "GLRX", "CREBBP", "KRAS", "NRAS", "FLT3", "PTPN11", "MLL2")
+# 737 hat im 2. relapse nur 8% blasten, deshalb ausgenommen von der klonalen analyse
+#p <- "737" ; sample.RR <- "rem_rel3" ; exclude.chr <- c("X", "Y") ; genes.to.label <- c("CREBBP", "KRAS", "NRAS", "FLT3", "PTPN11", "FGFR2", "EPHA5") ; ; max.af.plot <- 0.7
+p <- "108" ; sample.RR <- "rem_rel2" ; exclude.chr <- NA ; genes.to.label <- c("JAK2", "KMT2D", "SI", "MEGF6", "NBEA", "RPS5", "BIRC6", "SLC26A2") ; max.af.plot <- 0.7
+#p <- "AL9890" ; sample.RR <- "rem_rel2" ; exclude.chr <- NA ; genes.to.label <- c("CRYZ", "SEC16B", "FAT1") ; max.af.plot <- 0.7
+#p <- "S23" ; sample.RR <- "rem_rel3" ; exclude.chr <- NA ; genes.to.label <- c("NPY2R", "CREBBP", "GPR63") ; max.af.plot <- 1
 
 min.cov <- 0
 cov.max.std.dev <- 10
 max.af <- 1
 min.af <- 0
-blast.count <- list("737.dia" = 97, "737.rel" = 96, "737.rel2" = 70, "108.dia" = 91, "108.rel" = 93, "108.rel2" = 85)
+blast.count <- list("737.dia" = 97, "737.rel" = 96, "737.rel2" = 70,  
+		            "108.dia" = 91, "108.rel" = 93, "108.rel2" = 85,
+					"AL9890.dia" = 86, "AL9890.rel" = 87, "AL9890.rel2" = "NA",
+					"S23.dia" = 73, "S23.rel" = 96, "S23.rel2" = "NA")
 
-# exome seq variants
+# exome seq variantsl
 data <- read.csv("/mnt/projects/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", sep="\t")
 data <- data[data$patient == p & data$status != "REJECT",]
 data <- data[data$non_silent==1,]  # only non-silent
@@ -58,7 +64,7 @@ m$col[m$dia==0 & m$rel==0 & m$rel2 > 0.25] <- "#BCAFD6"
 m$col[m$dia==0 & m$rel==0 & m$rel2 <= 0.25] <- "#FFF57C"
 
 pdf(paste0("/mnt/projects/p2ry8-crlf2/results/figures/clonal-kinetics-", p, ".pdf"), width=12)
-plot(0, 0, xlim=c(1, 4.6), ylim=c(0, 0.7), type="n", xaxt="n", yaxt="n", xlab="", ylab="Allelic frequency", main=paste(p, " (n=", nrow(m), ")", sep=""))
+plot(0, 0, xlim=c(1, 4.6), ylim=c(0, max.af.plot), type="n", xaxt="n", yaxt="n", xlab="", ylab="Allelic frequency", main=paste(p, " (n=", nrow(m), ")", sep=""))
 axis(1, at=c(1.3, 2.8, 4.3), labels=c(paste0("D\n(", blast.count[[paste0(p, ".dia")]], "% blasts)"), paste0("R\n(", blast.count[[paste0(p, ".rel")]], "% blasts)"), paste0("RR\n(", blast.count[[paste0(p, ".rel2")]], "% blasts)")), padj=0.5)
 axis(2, at = seq(0, 1, 0.1), las = 1) 
 

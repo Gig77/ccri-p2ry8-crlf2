@@ -1,11 +1,10 @@
 use warnings FATAL => qw( all );
 use strict;
 
-system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_zahyee0Zooxiphoogo5ooMee3mai8uy8/variant_calling_somatic_737C__737_Relapse3_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/737_rem_rel3.somatic.vcf");
-system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_G_Remission__m1977_G_Dx_Diagnosis_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1977-G-dia_rem_xeno.somatic.vcf");
-system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_715_Remission__M1957_715_Relapse1_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1957-715-rel_rem_xeno.somatic.vcf");
-system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_Y3767_Remission__m1967_Y_Relapse_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1967-Y-rel_rem_xeno.somatic.vcf");
 system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_545_Remission__m1963_545_Relapse_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1963-545-rel_rem_xeno.somatic.vcf");
+system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_G_Remission__m1977_G_Dx_Diagnosis_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1977-G-dia_rem_xeno.somatic.vcf");
+system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_Y3767_Remission__m1967_Y_Relapse_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1967-Y-rel_rem_xeno.somatic.vcf");
+system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_715_Remission__M1957_715_Relapse1_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1957-715-rel_rem_xeno.somatic.vcf");
 system("ln -s /mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0024_HD_BCP_ALL_xiewahYoojiev7ahyoh4ohjiseiKepoh/variant_calling_somatic_545_Remission__m1964_545Rn_Relapse_annotated.vcf /mnt/projects/p2ry8-crlf2/data/mutect/m1964-545-rel_rem_xeno.somatic.vcf");
 
 my $dir = "/mnt/projects/p2ry8-crlf2/data/mutect/www.biomedical-sequencing.at/projects/BSA_0026_P2RY8_CRLF2_ALL_zahyee0Zooxiphoogo5ooMee3mai8uy8";
@@ -90,6 +89,10 @@ while (my $file = readdir(DIR)) {
 		elsif ($s1 =~ /^.+(C|_Remission)$/ and $s2 =~ /^(.+)R3$/)
 		{
 			$target = "/mnt/projects/p2ry8-crlf2/data/mutect/$1_rem_rel3.somatic.vcf";
+		}
+		elsif ($s1 eq "737C" and $s2 eq "737_Relapse3")
+		{
+			$target = "/mnt/projects/p2ry8-crlf2/data/mutect/737_rem_rel3.somatic.vcf";
 		}
 		else
 		{
