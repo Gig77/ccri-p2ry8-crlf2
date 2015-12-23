@@ -6,7 +6,7 @@ library("ggplot2")
 t <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 t <- t[!t$patient %in% c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957"),]
-#t <- t[!t$sample %in% c("rem_rel2", "rem_rel3"),]
+t <- t[!t$sample %in% c("rem_rel2", "rem_rel3"),]
 
 genes.jak <- c("JAK2", "JAK3", "JAK1", "IL7R", "SYK")
 genes.ras <- c("KRAS", "NRAS", "PTPN11", "CBL", "FLT3")
