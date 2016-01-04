@@ -1,21 +1,25 @@
 library("RColorBrewer")
 library("ggplot2")
 
+genes.jak <- c("JAK2", "JAK3", "JAK1", "IL7R", "SYK", "CRLF2")
+genes.ras <- c("KRAS", "NRAS", "PTPN11", "CBL", "FLT3")
+
 # TABLE: filtered-variants.tsv
 # read and filter input data
 t <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 t <- t[!t$patient %in% c("MA5", "BJ14367", "LU3", "SN18", "460", "545", "564", "957"),]
 t <- t[!t$sample %in% c("rem_rel2", "rem_rel3"),]
+t <- t[,c("patient", "sample", "cohort", "chr", "pos", "ref", "alt", "gene", "freq_leu")]
 
-genes.jak <- c("JAK2", "JAK3", "JAK1", "IL7R", "SYK")
-genes.ras <- c("KRAS", "NRAS", "PTPN11", "CBL", "FLT3")
+# add mutations found only by hotspot caller but not MuTect
+t <- rbind(t, setNames(data.frame("VS14645", "rem_rel", "relapsing", "1", 65310517, "C", "T", "JAK1", 0.116, stringsAsFactors=F), names(t)))
 
 t$class <- NA
 t$class[t$gene %in% genes.ras] <- "RTK/Ras"
 t$class[t$gene %in% genes.jak] <- "JAK/STAT"
 
-m <- t[!is.na(t$class), c("patient", "sample", "cohort", "chr", "pos", "ref", "alt", "gene", "freq_leu", "class")]
+m <- t[!is.na(t$class),]
 m$Gene <- factor(as.character(m$gene), c(genes.jak, genes.ras))
 m$class <- factor(m$class, c("JAK/STAT", "RTK/Ras"))
 
@@ -65,12 +69,13 @@ genes.shape[paste(genes.jak, "non-relapsing")] <- seq(0, length(genes.jak)-1) %%
 m$gene_cohort <- factor(paste(m$gene, m$cohort), levels=names(genes.col))
 
 # manually compute horizontal value including jitter b/c we use the same jitter twice
+set.seed(471)
 m$x <- as.numeric(m$class) + runif(nrow(m),-0.2,0.2)
 
 #m$shape <- as.integer(m$Gene) %% 3
 #m$shape[m$cohort == "relapsing"] <- m$shape[m$cohort == "relapsing"] + 15
 
-pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot.v2.pdf", width=10)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot.pdf", width=10)
 #pdf("/mnt/projects/p2ry8-crlf2/results/figures/af-plot-without-box.pdf", width=10)
 p <- ggplot(m, aes(class, freq_leu.adj))
 p <- p + theme_bw()
