@@ -95,7 +95,8 @@ t <- rbind(t, setNames(data.frame("GI13", "rem_rel", "12", 11802788, "ETV6", "wt
 t <- rbind(t, setNames(data.frame("737", "rem_dia", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
 t <- rbind(t, setNames(data.frame("737", "rem_rel", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
 t <- rbind(t, setNames(data.frame("HV80", "rem_dia", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
-t <- rbind(t, setNames(data.frame("HV80", "rem_rel", "9", 36838531, "PAX5", "wt", "deletion", 0.95, stringsAsFactors=F), names(t)))
+t <- rbind(t, setNames(data.frame("HV80", "rem_rel", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
+t <- rbind(t, setNames(data.frame("HV80", "rem_rel", "9", 36838532, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
 t <- rbind(t, setNames(data.frame("N7", "rem_rel", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
 t <- rbind(t, setNames(data.frame("DL2", "rem_rel", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
 t <- rbind(t, setNames(data.frame("VS14645", "rem_rel", "9", 36838531, "PAX5", "wt", "deletion", runif(1, 0.4, 0.6), stringsAsFactors=F), names(t)))
@@ -176,7 +177,7 @@ for(p in patients) {
 	  merged.label$col <- "green"
 	  merged.label$col[merged.label$alt %in% c("IK6", "deletion", "gain", "LOH")] <- rgb(141/255, 180/255, 226/255) # blueish
 	  points(merged.label$freq_dia, merged.label$freq_rel, col=merged.label$col, pch=19, cex=0.7)
-	  text(merged.label$freq_dia+0.015, merged.label$freq_rel+0.015, merged.label$gene, adj = c(0, 0), cex=0.5)
+	  text(merged.label$freq_dia+0.015, merged.label$freq_rel+0.015, merged.label$gene, adj = c(0, 0), cex=0.7)
 	}
 	if (match(p, patients) %% 12 == 0 || match(p, patients) == length(patients)) {
 	  mtext("AF diagnosis", side=1, outer=T, cex=1, line=1)
