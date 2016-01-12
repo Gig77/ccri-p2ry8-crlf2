@@ -7,6 +7,9 @@ label.genes <- c("P-C", "+21", "+X", "+Y", "-Y", "IKZF1", "IKZF2", "PAX5", "EBF1
 t <- read.csv("/mnt/projects/p2ry8-crlf2/results/filtered-variants.cosmic.tsv", sep="\t", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$deleterious == "yes" & t$freq_leu >= 0.1, c("patient", "sample", "chr", "pos", "gene", "ref", "alt", "freq_leu")]
 
+# add mutations found only by hotspot caller but not MuTect
+t <- rbind(t, setNames(data.frame("VS14645", "rem_rel", "1", 65310517, "JAK1", "C", "T", 0.116, stringsAsFactors=F), names(t)))
+
 # add gains and losses
 
 # P2RY8-CRLF2 fusion
