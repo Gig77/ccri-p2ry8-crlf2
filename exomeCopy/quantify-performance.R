@@ -4,9 +4,9 @@ library(GenomicRanges)
 exons.df <- read.delim("/mnt/projects/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed", header = FALSE)
 exons <- GRanges(seqname = exons.df[, 1], IRanges(start = exons.df[,2] + 1, end = exons.df[, 3]))
 
-snp.df <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/P2RY8-CRLF2_SNParray.txt")
-snp.df <- snp.df[snp.df$Type != "LOH",]
-snp <- GRanges(seqname = snp.df[,"Chr"], IRanges(start = snp.df[,"Min"], end = snp.df[,"Max"]), cn = snp.df[,"CN.State"], sample = snp.df[,"Sample"])
+snp.df <- read.delim("/mnt/projects/p2ry8-crlf2/results/cnvs.snp_arrays.txt")
+snp.df <- snp.df[snp.df$type != "LOH",]
+snp <- GRanges(seqname = snp.df[,"seqnames"], IRanges(start = snp.df[,"start"], end = snp.df[,"end"]), cn = snp.df[,"copy.count"], sample = snp.df[,"sample"])
 
 ec.df <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv")
 ec <- GRanges(seqname = ec.df[,"seqnames"], IRanges(start = ec.df[,"start"], end = ec.df[,"end"]), cn = ec.df[,"copy.count"], sample = ec.df[,"sample.name"])
