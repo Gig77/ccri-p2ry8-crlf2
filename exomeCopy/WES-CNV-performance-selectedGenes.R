@@ -188,10 +188,10 @@ bar <- function(dv, factors, dataframe, percentage=FALSE, errbar=!percentage, ha
 # barplot
 perf$Gene <- factor(perf$Gene, levels=c("PAR1", "IKZF1", "CDKN2A", "PAX5", "Overall"))
 perf$Metric <- factor(perf$Metric, levels=c("Sensitivity", "Specificity", "Accuracy"))
-cols <- c("red", "blue", "black")
+cols <- c("red", "blue", "darkgray")
 
-pdf("/mnt/projects/p2ry8-crlf2/results/figures/wes-cnv-performance.pdf", height=6.6)
-par(xpd=T)
+pdf("/mnt/projects/p2ry8-crlf2/results/figures/wes-cnv-performance.pdf", width=6/2.54, height=7/2.54)
+par(xpd=T, cex=0.45)
 bar(Percent, factors = c(Metric, Gene), perf, errbar = FALSE, ylim=c(0, 1.15), col=cols, legend=F, xlab="", mar=c(10,4.1,4.1,2.1), mgp=c(3, 0.5, 0), tck=-0.02)
 legend("top", legend=levels(perf$Metric), fill=cols, ncol=3, bty="n")
 rect(0.2, -0.45, 20.8, -0.15)

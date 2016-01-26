@@ -178,15 +178,16 @@ coverage-region: coverage-region/allpatients.PAR1-X-60001-2699520.pdf \
 		  coverage-region/allpatients.ATP10A-15-24452756-27861838.pdf \
 		  coverage-region/allpatients.NUP214-9-133609878-134537138.pdf \
 		  coverage-region/allpatients.BTG1-12-91300000-93550000.pdf \
-		  coverage-region/allpatients.GABRB3-15-25870574-27936343.pdf
+		  coverage-region/allpatients.GABRB3-15-25870574-27936343.pdf \
+		  coverage-region/allpatients.SETD2-3-46897168-47324570.pdf
 		  
-coverage-region/%.exon-coverage.tsv: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed ~/git/hdall/cnv/get-exon-coverage.pl
+coverage-region/%.exon-coverage.tsv: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /mnt/projects/generic/data/illumina/truseq_exome_targeted_regions.hg19.bed /mnt/projects/hdall/scripts/cnv/get-exon-coverage.pl
 	/data_synology/software/samtools-0.1.19/samtools depth \
 		-Q 1 \
-		-b /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed \
+		-b /mnt/projects/generic/data/illumina/truseq_exome_targeted_regions.hg19.bed \
 		$< \
 	| perl ~/git/hdall/cnv/get-exon-coverage.pl \
-		--exon-bed /data/christian/generic/data/current/illumina/truseq_exome_targeted_regions.hg19.bed \
+		--exon-bed /mnt/projects/generic/data/illumina/truseq_exome_targeted_regions.hg19.bed \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
@@ -400,8 +401,8 @@ figures: figures/mutations-per-patient.pdf figures/cnv-plot-relapsing.pdf figure
 figures/mutations-per-patient.pdf: filtered-variants.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/mutations-per-patient.R
 	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/mutations-per-patient.R
 
-figures/cnv-plot-relapsing.pdf figures/cnv-plot-nonrelapsing.pdf: exomeCopy/allpatients.filtered-segments.exomeCopy.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/cnv-plot.R
-	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/cnv-plot.R
+figures/cnv-plot-relapsing.pdf figures/cnv-plot-nonrelapsing.pdf: exomeCopy/allpatients.filtered-segments.exomeCopy.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/cnv-plot-genome.R
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/cnv-plot-genome.R
 
 figures/signaling-barplot.non-relapsing.pdf figures/signaling-barplot.matched.pdf: hotspot-mutations.tsv filtered-variants.cosmic.tsv /mnt/projects/p2ry8-crlf2/scripts/figures/signaling-barplot.R
 	Rscript /mnt/projects/p2ry8-crlf2/scripts/figures/signaling-barplot.R

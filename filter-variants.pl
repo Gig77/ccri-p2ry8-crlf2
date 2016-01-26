@@ -308,28 +308,47 @@ while (my $line = $vcf->next_line())
 
 	$tot_var ++;
 	$qual_num{$x->{FILTER}->[0]} = $qual_num{$x->{FILTER}->[0]} ? $qual_num{$x->{FILTER}->[0]} + 1 : 1;
-	
-	if ($x->{gtypes}{$vcf_sample_id_rem}{GT} eq $x->{gtypes}{$vcf_sample_id_tum}{GT}) # no difference in genotype?
+
+	my $gt_rem = $x->{gtypes}{$vcf_sample_id_rem}{GT};
+	die "ERROR: Could not determine genotype of sample $vcf_sample_id_rem in file $vcf_in\n" if (!defined $gt_rem or $gt_rem eq "");
+	my $gt_tum = $x->{gtypes}{$vcf_sample_id_tum}{GT};
+	die "ERROR: Could not determine genotype of sample $vcf_sample_id_tum in file $vcf_in\n" if (!defined $gt_tum or $gt_tum eq "");
+
+	if ($gt_rem eq $gt_tum) # no difference in genotype?
 	{
 		$filtered_gt ++;
 		next;
 	}
 	
-	my $gt_rem = $x->{gtypes}{$vcf_sample_id_rem}{GT};
-	die "ERROR: Could not determine genotype of sample $vcf_sample_id_rem in file $vcf_in\n" if (!defined $gt_rem or $gt_rem eq "");
-
-	if ($gt_rem =~ /1/) # germline variant?
-	{
-		$filtered_germ ++;
-		next;
-	}
 	if (@{$x->{ALT}} != 1) # more than one alternative allele?
 	{
 		$filtered_alt ++;
 		next;
 	}		
 
+	# NOTE: there is a problem in the genotype annotation of some indel VCFs in which the columns of tumor and remission genotypes are swapped;
+	# thus this filter leads to falsely rejected indels and is therefore disabled for indels
+	if (length($x->{REF}) == length($x->{ALT}->[0])) {	
+		if ($gt_rem =~ /1/) # germline variant?
+		{
+			#print STDERR "GENOTYPE $vcf_sample_id_rem: $gt_rem\n";
+			$filtered_germ ++;
+			next;
+		}		
+	}
+	
 	my $status = $x->{FILTER}->[0];
+		
+	# keep mutations falsely rejected by MuTect
+	if (
+		($patient =~ /737/                           and $x->{CHROM} eq "9"  and $x->{POS} == 36882082) or         # PAX5 T311A
+		($patient =~ /737/                           and $x->{CHROM} eq "12" and $x->{POS} == 25398284) or         # KRAS G12D
+		($patient eq "AL9890"                        and $x->{CHROM} eq "12" and $x->{POS} == 25398283)            # KRAS indel
+#		($vcf_sample_id_tum eq "M1037_839_Diagnosis" and $x->{CHROM} eq "13" and $x->{POS} == 32972682)            # BRCA2 indel
+	   ) 
+	{
+		$status = "MISSED";
+	} 
 		
 	if ($status eq "REJECT") # rejected by MuTect
 	{
@@ -381,14 +400,14 @@ while (my $line = $vcf->next_line())
 		if ($dp_tum < 10)
 		{
 			#INFO("REJECT: READ DEPTH < 10: $dp_tum");
-			next;			
+			next if ($status ne "MISSED");
 		}
 
 		# require high consensus call for indel
 		if ($ad_tum_alt/$ad_tum_any_indel < 0.7)
 		{
 			#INFO("REJECT: BAD CONSENSUS: ",$x->{CHROM},":",$x->{POS},"");
-			next;
+			next if ($status ne "MISSED");
 		}		
 		
 		# require support from both strands
@@ -397,7 +416,7 @@ while (my $line = $vcf->next_line())
 		if ($reads_indel_fwd == 0 or $reads_indel_rev == 0)
 		{
 			#INFO("REJECT: STRAND BIAS: ",$x->{CHROM},":",$x->{POS},"\t","reads_indel_fwd: $reads_indel_fwd\treads_indel_rev: $reads_indel_rev");
-			next;
+			next if ($status ne "MISSED");
 		}
 		
 		# check alignment quality around indel
@@ -406,7 +425,7 @@ while (my $line = $vcf->next_line())
 		if ($frac_mm_reads_indel - $frac_mm_reads_ref > 0.01)
 		{
 			#INFO("REJECT: POOR ALIGNMENT: ",$x->{CHROM},":",$x->{POS},"\t","frac_mm_reads_indel: $frac_mm_reads_indel\tfrac_mm_reads_ref: $frac_mm_reads_ref");
-			next;
+			next if ($status ne "MISSED");
 		}
 
 		# check mapping quality
@@ -417,7 +436,7 @@ while (my $line = $vcf->next_line())
 		if ($mq_indel_tum < 40)
 		{
 			#INFO("REJECT: POOR MAPPING: ",$x->{CHROM},":",$x->{POS},"\t","T_MQ=$mq_indel_tum,$mq_ref_tum");
-			next;
+			next if ($status ne "MISSED");
 		}
 		
 				
@@ -677,15 +696,10 @@ while (my $line = $vcf->next_line())
 #	print "\n"; print Dumper($x); exit;
 }
 
-# add 737 KRAS conserved clonal variant missed by MuTect b/c three reads were present in remission sample, presumably because of MRD
-if ($patient eq "737" and $cmp_type eq "rem_dia") {
-	print("737\trem_dia\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t187\t115\t70\t0.374\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");
-} elsif ($patient eq "737" and $cmp_type eq "rem_rel") {
-	print("737\trem_rel\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t154\t81\t73\t0.474\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");		
-} elsif ($patient eq "737" and $cmp_type eq "rem_rel2") {
-	print("737\trem_rel2\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t152\t138\t14\t0.0921\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");		
-} elsif ($patient eq "737" and $cmp_type eq "rem_rel3") {
-	print("737\trem_rel3\trelapsing\tsnp\tMISSED\t\t12\t25398284\t.\tC\tT\tKRAS\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t2\t150\t147\t3\t0.02\t141\t89\t52\t0.368794326\tG12D\tEFF=NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|188|KRAS|protein_coding|CODING|ENST00000311936|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|189|KRAS|protein_coding|CODING|ENST00000256078|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|43|KRAS|protein_coding|CODING|ENST00000556131|2|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|gGt/gAt|G12D|75|KRAS|protein_coding|CODING|ENST00000557334|2|1)\tB,B\t0\t5.68\t18.3719\tSmall_GTP-binding_protein_domain_(1)\t\t\t\t\t\t\t\t\t\n");		
+# PAX5 mutation not called by MuTect
+if ($patient eq "737" and $cmp_type eq "rem_rel3") {
+	print("737\trem_rel3\trelapsing\tsnp\tMISSED\t\t9\t36882082\t.\tT\tC\tPAX5\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t7\t6\t5\t0\t0\t5\t4\t1\t0.2\tT268A;T203A;T311A;T138A\tEFF=EXON(MODIFIER|||||PAX5|nonsense_mediated_decay|CODING|ENST00000377840|7|1),EXON(MODIFIER|||||PAX5|nonsense_mediated_decay|CODING|ENST00000523493|8|1),INTRON(MODIFIER||||220|PAX5|protein_coding|CODING|ENST00000523145|6|1),INTRON(MODIFIER||||291|PAX5|protein_coding|CODING|ENST00000446742|6|1),INTRON(MODIFIER||||295|PAX5|protein_coding|CODING|ENST00000520154|6|1),INTRON(MODIFIER||||324|PAX5|protein_coding|CODING|ENST00000523241|6|1),INTRON(MODIFIER||||328|PAX5|protein_coding|CODING|ENST00000377847|7|1),INTRON(MODIFIER||||357|PAX5|protein_coding|CODING|ENST00000377852|7|1),INTRON(MODIFIER||||59|PAX5|protein_coding|CODING|ENST00000522932|1|1|WARNING_TRANSCRIPT_NO_START_CODON),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T138A|218|PAX5|protein_coding|CODING|ENST00000524340|5|1|WARNING_TRANSCRIPT_NO_START_CODON),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T203A|283|PAX5|protein_coding|CODING|ENST00000522003|7|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T268A|319|PAX5|protein_coding|CODING|ENST00000520281|7|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T268A|348|PAX5|protein_coding|CODING|ENST00000414447|7|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T311A|362|PAX5|protein_coding|CODING|ENST00000377853|8|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T311A|391|PAX5|protein_coding|CODING|ENST00000358127|8|1)".
+	      "\tB,D,D,B,P\t0.25\t5.97\t16.4504\t\t\t\t\t\t\t\t\t\t\n");
 }	
 
 $vcf->close();
