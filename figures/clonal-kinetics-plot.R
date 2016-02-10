@@ -10,37 +10,70 @@ label.genes <- c("PAR1", "21", "X", "Y", "IKZF1", "IKZF2", "PAX5", "EBF1", "ETV6
 input <- list(
 		"108" = list(
 				title.suffix = "",
-				timepoints =   c("D",           "DX",                    "R",           "RX",                    "RR"),
-				identifiers =  c("108 rem_dia", "m1035-108-dia rem_xeno", "108 rem_rel", "m1060-108-rel rem_xeno", "108 rem_rel2"),
-				xpos =         c(1,             2,                        4,             5,                        7),
-				xenograft =    c(FALSE,         TRUE,                     FALSE,         TRUE,                     FALSE),
-				transplant =   c(FALSE,         FALSE,                    FALSE,         FALSE,                    TRUE),
-				blast.counts = c("91",          "NA",                     "93",          "NA",                     "85"),
+				timepoints =   c("D",           "R",           "RR"),
+				identifiers =  c("108 rem_dia", "108 rem_rel", "108 rem_rel2"),
+				xpos =         c(1,             2,             3),
+				xenograft =    c(FALSE,         FALSE,         FALSE),
+				transplant =   c(FALSE,         FALSE,         TRUE),
+				blast.counts = c("91",          "93",          "85"),
 				genes.to.label = label.genes,
 				exclude.chr = c("MT"),
 				max.af.plot = 1.0),
+#		"108" = list(
+#		  title.suffix = "",
+#		  timepoints =   c("D",           "DX",                    "R",           "RX",                    "RR"),
+#		  identifiers =  c("108 rem_dia", "m1035-108-dia rem_xeno", "108 rem_rel", "m1060-108-rel rem_xeno", "108 rem_rel2"),
+#		  xpos =         c(1,             2,                        4,             5,                        7),
+#		  xenograft =    c(FALSE,         TRUE,                     FALSE,         TRUE,                     FALSE),
+#		  transplant =   c(FALSE,         FALSE,                    FALSE,         FALSE,                    TRUE),
+#		  blast.counts = c("91",          "NA",                     "93",          "NA",                     "85"),
+#		  genes.to.label = label.genes,
+#		  exclude.chr = c("MT"),
+#		  max.af.plot = 1.0),
 		"715" = list(
 				title.suffix = "HD",
-				timepoints =   c("D",           "R",           "RX",                    "RR"),
-				identifiers =  c("715 rem_dia", "715 rem_rel", "m1957-715-rel rem_xeno", "715 rem_rel3"),
-				xpos =         c(1,             3,             4,                        6),
-				xenograft =    c(FALSE,         FALSE,         TRUE,                     FALSE),
-				transplant =   c(FALSE,         FALSE,         FALSE,                    TRUE),
-				blast.counts = c("92",          "92",          "NA",                     "92"),
+				timepoints =   c("D",           "R",           "RR"),
+				identifiers =  c("715 rem_dia", "715 rem_rel", "715 rem_rel3"),
+				xpos =         c(1,             2,             3),
+				xenograft =    c(FALSE,         FALSE,         FALSE),
+				transplant =   c(FALSE,         FALSE,         TRUE),
+				blast.counts = c("92",          "92",          "92"),
 				genes.to.label = label.genes,
 				exclude.chr = c("MT"),
 				max.af.plot = 1.0),
-		"737" = list(
+#    "715" = list(
+#      title.suffix = "HD",
+#      timepoints =   c("D",           "R",           "RX",                    "RR"),
+#      identifiers =  c("715 rem_dia", "715 rem_rel", "m1957-715-rel rem_xeno", "715 rem_rel3"),
+#      xpos =         c(1,             3,             4,                        6),
+#      xenograft =    c(FALSE,         FALSE,         TRUE,                     FALSE),
+#      transplant =   c(FALSE,         FALSE,         FALSE,                    TRUE),
+#      blast.counts = c("92",          "92",          "NA",                     "92"),
+#      genes.to.label = label.genes,
+#      exclude.chr = c("MT"),
+#      max.af.plot = 1.0),
+    "737" = list(
 				title.suffix = "dic (9,20)",
-				timepoints =   c("D",           "DX",                    "R",           "RX",                      "RR"),
-				identifiers =  c("737 rem_dia", "m1041-737-dia rem_xeno", "737 rem_rel", "m1069-737-rel rem_xeno", "737 rem_rel3"),
-				xpos =         c(1,             2,                        4,             5,                        7),
-				xenograft =    c(FALSE,         TRUE,                     FALSE,         TRUE,                     FALSE),
-				transplant =   c(FALSE,         FALSE,                    FALSE,         FALSE,                    TRUE),
-				blast.counts = c("97",          "NA",                     "96",          "NA",                     "70"),
+				timepoints =   c("D",           "R",           "RR"),
+				identifiers =  c("737 rem_dia", "737 rem_rel", "737 rem_rel3"),
+				xpos =         c(1,             2,             3),
+				xenograft =    c(FALSE,         FALSE,         FALSE),
+				transplant =   c(FALSE,         FALSE,         TRUE),
+				blast.counts = c("97",          "96",          "70"),
 				genes.to.label = label.genes,
 				exclude.chr = c("MT"),
 				max.af.plot = 1.0),
+#    "737" = list(
+#      title.suffix = "dic (9,20)",
+#      timepoints =   c("D",           "DX",                    "R",           "RX",                      "RR"),
+#      identifiers =  c("737 rem_dia", "m1041-737-dia rem_xeno", "737 rem_rel", "m1069-737-rel rem_xeno", "737 rem_rel3"),
+#      xpos =         c(1,             2,                        4,             5,                        7),
+#      xenograft =    c(FALSE,         TRUE,                     FALSE,         TRUE,                     FALSE),
+#      transplant =   c(FALSE,         FALSE,                    FALSE,         FALSE,                    TRUE),
+#      blast.counts = c("97",          "NA",                     "96",          "NA",                     "70"),
+#      genes.to.label = label.genes,
+#      exclude.chr = c("MT"),
+#      max.af.plot = 1.0),
 #	"545" = list(
 #   title.suffix = "HD",
 #	  timepoints =   c("D",           "R",           "RX1",                   "RX2"),
@@ -53,59 +86,81 @@ input <- list(
 #	  max.af.plot = 1),
 		"839" = list(
 				title.suffix = "iAMP21",
-				timepoints =   c("D",           "DX",                    "R"),
-				identifiers =  c("839 rem_dia", "m1037-839-dia rem_xeno", "839 rem_rel"),
-				xpos =         c(1,             2,                        4),
-				xenograft =    c(FALSE,         TRUE,                     FALSE),
-				transplant =   c(FALSE,         FALSE,                    FALSE),
-				blast.counts = c("92",           "NA",                    "86"),
+				timepoints =   c("D",           "R"),
+				identifiers =  c("839 rem_dia", "839 rem_rel"),
+				xpos =         c(1,             2),
+				xenograft =    c(FALSE,         FALSE),
+				transplant =   c(FALSE,         FALSE),
+				blast.counts = c("92",          "86"),
 				genes.to.label = label.genes,
 				exclude.chr = c("MT"),
 				max.af.plot = 1.0),
-		"92" = list(
+#    "839" = list(
+#        title.suffix = "iAMP21",
+#        timepoints =   c("D",           "DX",                    "R"),
+#        identifiers =  c("839 rem_dia", "m1037-839-dia rem_xeno", "839 rem_rel"),
+#        xpos =         c(1,             2,                        4),
+#        xenograft =    c(FALSE,         TRUE,                     FALSE),
+#        transplant =   c(FALSE,         FALSE,                    FALSE),
+#        blast.counts = c("92",           "NA",                    "86"),
+#        genes.to.label = label.genes,
+#        exclude.chr = c("MT"),
+#        max.af.plot = 1.0),
+    "92" = list(
 				title.suffix = "iAMP21",
-				timepoints =   c("D",          "DX",                    "R"),
-				identifiers =  c("92 rem_dia", "m1059-92-dia rem_xeno", "92 rem_rel"),
-				xpos =         c(1,             2,                      4),
-				xenograft =    c(FALSE,         TRUE,                   FALSE),
-				transplant =   c(FALSE,         FALSE,                  FALSE),
-				blast.counts = c("97",          "NA",                   "90"),
+				timepoints =   c("D",          "R"),
+				identifiers =  c("92 rem_dia", "92 rem_rel"),
+				xpos =         c(1,            2),
+				xenograft =    c(FALSE,        FALSE),
+				transplant =   c(FALSE,        FALSE),
+				blast.counts = c("97",         "90"),
 				genes.to.label = label.genes,
 				exclude.chr = c("MT"),
 				max.af.plot = 1.0),
-		"841" = list(
-				title.suffix = "HD",
-				timepoints =   c("D",           "DX"),
-				identifiers =  c("841 rem_dia", "m248-841-dia rem_xeno"),
-				xpos =         c(1,             2),
-				xenograft =    c(FALSE,         TRUE),
-				transplant =   c(FALSE,         FALSE),
-				blast.counts = c("98",          "NA"),
-				genes.to.label = label.genes,
-				exclude.chr = c("MT"),
-				max.af.plot = 1.0),
-		"379" = list(
-				title.suffix = "",
-				timepoints =   c("D",           "DX"),
-				identifiers =  c("379 rem_dia", "m252-379-dia rem_xeno"),
-				xpos =         c(1,             2),
-				xenograft =    c(FALSE,         TRUE),
-				transplant =   c(FALSE,         FALSE),
-				blast.counts = c("97",          "NA"),
-				genes.to.label = label.genes,
-				exclude.chr = c("MT"),
-				max.af.plot = 1.0),
-		"833" = list(
-				title.suffix = "",
-				timepoints =   c("D",           "DX"),
-				identifiers =  c("833 rem_dia", "m247-833-dia rem_xeno"),
-				xpos =         c(1,             2),
-				xenograft =    c(FALSE,         TRUE),
-				transplant =   c(FALSE,         FALSE),
-				blast.counts = c("96",          "NA"),
-				genes.to.label = label.genes,
-				exclude.chr = c("MT"),
-				max.af.plot = 1.0),
+#    "92" = list(
+#        title.suffix = "iAMP21",
+#        timepoints =   c("D",          "DX",                    "R"),
+#        identifiers =  c("92 rem_dia", "m1059-92-dia rem_xeno", "92 rem_rel"),
+#        xpos =         c(1,             2,                      4),
+#        xenograft =    c(FALSE,         TRUE,                   FALSE),
+#        transplant =   c(FALSE,         FALSE,                  FALSE),
+#        blast.counts = c("97",          "NA",                   "90"),
+#        genes.to.label = label.genes,
+#        exclude.chr = c("MT"),
+#        max.af.plot = 1.0),
+#"841" = list(
+#				title.suffix = "HD",
+#				timepoints =   c("D",           "DX"),
+#				identifiers =  c("841 rem_dia", "m248-841-dia rem_xeno"),
+#				xpos =         c(1,             2),
+#				xenograft =    c(FALSE,         TRUE),
+#				transplant =   c(FALSE,         FALSE),
+#				blast.counts = c("98",          "NA"),
+#				genes.to.label = label.genes,
+#				exclude.chr = c("MT"),
+#				max.af.plot = 1.0),
+#		"379" = list(
+#				title.suffix = "",
+#				timepoints =   c("D",           "DX"),
+#				identifiers =  c("379 rem_dia", "m252-379-dia rem_xeno"),
+#				xpos =         c(1,             2),
+#				xenograft =    c(FALSE,         TRUE),
+#				transplant =   c(FALSE,         FALSE),
+#				blast.counts = c("97",          "NA"),
+#				genes.to.label = label.genes,
+#				exclude.chr = c("MT"),
+#				max.af.plot = 1.0),
+#		"833" = list(
+#				title.suffix = "",
+#				timepoints =   c("D",           "DX"),
+#				identifiers =  c("833 rem_dia", "m247-833-dia rem_xeno"),
+#				xpos =         c(1,             2),
+#				xenograft =    c(FALSE,         TRUE),
+#				transplant =   c(FALSE,         FALSE),
+#				blast.counts = c("96",          "NA"),
+#				genes.to.label = label.genes,
+#				exclude.chr = c("MT"),
+#				max.af.plot = 1.0),
 		"AL9890" = list(
 				title.suffix = "",
 				timepoints =   c("D",             "R",               "RR"),
@@ -169,7 +224,8 @@ cnv <- read.csv("/mnt/projects/p2ry8-crlf2/data/cnvs_kinetics_figure.txt", sep="
 cols.merge <- c("chr", "pos", "ref", "alt", "gene", "cosmic_hits_aa")
 col.af <- "freq_leu"
 
-pdf(paste0("/mnt/projects/p2ry8-crlf2/results/figures/clonal-kinetics.pdf"), width=4.9/2.54, height=3.5/2.54)
+#pdf(paste0("/mnt/projects/p2ry8-crlf2/results/figures/clonal-kinetics.pdf"), width=4.9/2.54, height=3.5/2.54)
+pdf(paste0("/mnt/projects/p2ry8-crlf2/results/figures/clonal-kinetics.pdf"), width=4.0/2.54, height=3.4/2.54)
 par(mar=c(1,1,1,1), oma=c(0,0,0,0))
 
 for (p in names(input)) {
@@ -251,7 +307,7 @@ for (p in names(input)) {
 	  tp.primary <- input[[p]]$timepoints[!input[[p]]$xenograft]
 		if (length(tp.primary) > 1 && max(mut.patient[i,tp.primary]) > 0) {
 		  for (j in 2:length(tp.primary)) {
-		    lines(x[!input[[p]]$xenograft][(j-1):j], mut.patient[i,tp.primary[(j-1):j]], col=mut.patient$color[i], lty=ifelse(mut.patient[i,tp.primary[j-1]] == 0, lty.emerging, 1), lwd=1.2, cex=0.6)
+		    lines(x[!input[[p]]$xenograft][(j-1):j], mut.patient[i,tp.primary[(j-1):j]], col=mut.patient$color[i], lty=ifelse(mut.patient[i,tp.primary[j-1]] == 0 | mut.patient[i,tp.primary[j]] == 0, lty.emerging, 1), lwd=1.2, cex=0.6)
 		  }
 		  points(x[!input[[p]]$xenograft], mut.patient[i,input[[p]]$timepoints][!input[[p]]$xenograft], col=mut.patient$color[i], pch=ifelse(mut.patient[i,input[[p]]$timepoints][!input[[p]]$xenograft] > 0 & !low.coverage, 19, 1), cex=0.6)
 		}
@@ -266,7 +322,7 @@ for (p in names(input)) {
 	}	
 	
 	# mark special mutations
-	if (p == "715") {
+	if (p == "715" && "RX" %in% names(mut.patient)) {
 	  points(x[2:4], mut.patient[mut.patient$pos==3786787, c("R", "RX", "RR")], col="white", pch=4, cex=0.25, lwd=0.6)
 	}
 	

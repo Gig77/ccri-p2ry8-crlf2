@@ -6,6 +6,8 @@ library(exomeCopy)
 
 registerDoMC(40) # number of cores for parallel execution
 
+rm(list=ls())
+
 cychp = list(
   "108D"  = "NA",
   "108R"  = "NA",
@@ -52,6 +54,8 @@ regions = rbind(regions, setNames(data.frame("HV80R", "PAR1", "X", 1039250, 1984
 regions = rbind(regions, setNames(data.frame("737D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
 regions = rbind(regions, setNames(data.frame("737R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
 regions = rbind(regions, setNames(data.frame("737R3", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
+regions = rbind(regions, setNames(data.frame("737R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions))) # zoom in
+regions = rbind(regions, setNames(data.frame("737R3", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions))) # zoom in
 
 regions = rbind(regions, setNames(data.frame("715R3", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
 
@@ -64,6 +68,12 @@ regions = rbind(regions, setNames(data.frame("839R", "IKZF1", "7", 49925794, 508
 regions = rbind(regions, setNames(data.frame("948D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
 
 regions = rbind(regions, setNames(data.frame("HV80R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
+
+regions = rbind(regions, setNames(data.frame("N7D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
+regions = rbind(regions, setNames(data.frame("N7R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
+
+regions = rbind(regions, setNames(data.frame("DL2D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
+regions = rbind(regions, setNames(data.frame("DL2R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
 
 # PAX5 ---------------
 
@@ -112,22 +122,26 @@ tracks.all <- foreach(i=1:nrow(regions), .verbose = FALSE) %dopar% {
   region <- regions[i,]
 
   # get array data
-  cmd <- paste0("cat ", cychp[[region$patient]], " | perl /mnt/projects/p2ry8-crlf2/scripts/cychp2csv.pl ", region$chr, ":", region$start, "-", region$end)
-  print(cmd)
-  array <- read.table(pipe(cmd), header=T, stringsAsFactors = F)
-  array$Chromosome <- paste0("chr", array$Chromosome)
-  lrr.gr <- makeGRangesFromDataFrame(array[array$Type=="LRR",c("Chromosome", "Start", "Value")], start.field = "Start", end.field = "Start", keep.extra.columns = T)
-  cn.gr <- makeGRangesFromDataFrame(array[array$Type=="CN",c("Chromosome", "Start", "End", "Value")], start.field = "Start", end.field = "End", keep.extra.columns = T)
-  
-  # encode CN state into LRR
-  o <- findOverlaps(lrr.gr, cn.gr)
-  states <- cn.gr[o@subjectHits]$Value
-  lrr.gr <- GRanges(seqnames=seqnames(lrr.gr), ranges=ranges(lrr.gr), 
-              mcols=data.frame(
-                Gain   = as.numeric(ifelse(states >  2, lrr.gr$Value, NA)),
-                Loss   = as.numeric(ifelse(states <  2, lrr.gr$Value, NA)),
-                Normal = as.numeric(ifelse(states == 2, lrr.gr$Value, NA))
-              ))
+  if (!is.null(cychp[[region$patient]])) {
+    cmd <- paste0("cat ", cychp[[region$patient]], " | perl /mnt/projects/p2ry8-crlf2/scripts/cychp2csv.pl ", region$chr, ":", region$start, "-", region$end)
+    print(cmd)
+    array <- read.table(pipe(cmd), header=T, stringsAsFactors = F)
+    array$Chromosome <- paste0("chr", array$Chromosome)
+    lrr.gr <- makeGRangesFromDataFrame(array[array$Type=="LRR",c("Chromosome", "Start", "Value")], start.field = "Start", end.field = "Start", keep.extra.columns = T)
+    cn.gr <- makeGRangesFromDataFrame(array[array$Type=="CN",c("Chromosome", "Start", "End", "Value")], start.field = "Start", end.field = "End", keep.extra.columns = T)
+    
+    # encode CN state into LRR
+    o <- findOverlaps(lrr.gr, cn.gr)
+    states <- cn.gr[o@subjectHits]$Value
+    lrr.gr <- GRanges(seqnames=seqnames(lrr.gr), ranges=ranges(lrr.gr), 
+                      mcols=data.frame(
+                        Gain   = as.numeric(ifelse(states >  2, lrr.gr$Value, NA)),
+                        Loss   = as.numeric(ifelse(states <  2, lrr.gr$Value, NA)),
+                        Normal = as.numeric(ifelse(states == 2, lrr.gr$Value, NA))
+                      ))
+  } else {
+    lrr.gr <- GRanges(seqnames=region$chr, ranges=IRanges(1,2), mcols=data.frame(Gain=2, Loss=2, Normal=2))
+  }
 
   # get WES data
   load(paste0("/mnt/projects/p2ry8-crlf2/results/exomeCopy/", region$patient, ".exomeCopy.fit.RData"))
@@ -152,7 +166,7 @@ tracks.all <- foreach(i=1:nrow(regions), .verbose = FALSE) %dopar% {
                                       fontsize=7, fontcolor.group="black", background.title="white")
   tracks[["genes"]]@range <- tracks[["genes"]]@range[tracks[["genes"]]@range$symbol %in% unlist(strsplit(region$genes, ","))]
   tracks[["array"]] <- DataTrack(lrr.gr, name = paste(region$patient, "Array"), type = c("p", "g"), groups=c("Gain", "Loss", "Normal"), col=c("red", "blue", "darkgray"), 
-                         cex=0.2, lty.grid=2, v=0, ylim=c(-1.8, 1.8), alpha.title = 1, alpha=0.9, fontsize=40, col.title="black", col.axis="black")
+                       cex=0.2, lty.grid=2, v=0, ylim=c(-1.8, 1.8), alpha.title = 1, alpha=0.9, fontsize=40, col.title="black", col.axis="black")
   tracks[["sep"]] <- DataTrack(ylim=c(1,1), showTitle=F, showAxis=F, background.panel = "lightgray")
   tracks[["wes"]] <- DataTrack(wes.gr, name = paste(region$patient, "WES"), type = c("p", "g"), groups=c("Gain", "Loss", "Normal"), col=c("darkgray", "blue", "red"), 
                          cex=0.4, lty.grid=2, v=0, ylim=c(0.1,1.9), alpha.title = 1, alpha=0.9, fontsize=40, col.title="black", col.axis="black")

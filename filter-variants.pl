@@ -341,10 +341,10 @@ while (my $line = $vcf->next_line())
 		
 	# keep mutations falsely rejected by MuTect
 	if (
-		($patient =~ /737/                           and $x->{CHROM} eq "9"  and $x->{POS} == 36882082) or         # PAX5 T311A
-		($patient =~ /737/                           and $x->{CHROM} eq "12" and $x->{POS} == 25398284) or         # KRAS G12D
-		($patient eq "AL9890"                        and $x->{CHROM} eq "12" and $x->{POS} == 25398283)            # KRAS indel
-#		($vcf_sample_id_tum eq "M1037_839_Diagnosis" and $x->{CHROM} eq "13" and $x->{POS} == 32972682)            # BRCA2 indel
+		($patient =~ /737/     and $x->{CHROM} eq "9"  and $x->{POS} == 36882082) or         # PAX5 T311A
+		($patient =~ /737/     and $x->{CHROM} eq "12" and $x->{POS} == 25398284) or         # KRAS G12D
+		($patient eq "AL9890"  and $x->{CHROM} eq "12" and $x->{POS} == 25398283) or         # KRAS indel
+		($patient eq "DL2"     and $x->{CHROM} eq "7"  and $x->{POS} == 50450244)            # IKFZ1 R143Q
 	   ) 
 	{
 		$status = "MISSED";
@@ -696,10 +696,13 @@ while (my $line = $vcf->next_line())
 #	print "\n"; print Dumper($x); exit;
 }
 
-# PAX5 mutation not called by MuTect
+# add misse mutations not called by MuTect
 if ($patient eq "737" and $cmp_type eq "rem_rel3") {
 	print("737\trem_rel3\trelapsing\tsnp\tMISSED\t\t9\t36882082\t.\tT\tC\tPAX5\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t7\t6\t5\t0\t0\t5\t4\t1\t0.2\tT268A;T203A;T311A;T138A\tEFF=EXON(MODIFIER|||||PAX5|nonsense_mediated_decay|CODING|ENST00000377840|7|1),EXON(MODIFIER|||||PAX5|nonsense_mediated_decay|CODING|ENST00000523493|8|1),INTRON(MODIFIER||||220|PAX5|protein_coding|CODING|ENST00000523145|6|1),INTRON(MODIFIER||||291|PAX5|protein_coding|CODING|ENST00000446742|6|1),INTRON(MODIFIER||||295|PAX5|protein_coding|CODING|ENST00000520154|6|1),INTRON(MODIFIER||||324|PAX5|protein_coding|CODING|ENST00000523241|6|1),INTRON(MODIFIER||||328|PAX5|protein_coding|CODING|ENST00000377847|7|1),INTRON(MODIFIER||||357|PAX5|protein_coding|CODING|ENST00000377852|7|1),INTRON(MODIFIER||||59|PAX5|protein_coding|CODING|ENST00000522932|1|1|WARNING_TRANSCRIPT_NO_START_CODON),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T138A|218|PAX5|protein_coding|CODING|ENST00000524340|5|1|WARNING_TRANSCRIPT_NO_START_CODON),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T203A|283|PAX5|protein_coding|CODING|ENST00000522003|7|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T268A|319|PAX5|protein_coding|CODING|ENST00000520281|7|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T268A|348|PAX5|protein_coding|CODING|ENST00000414447|7|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T311A|362|PAX5|protein_coding|CODING|ENST00000377853|8|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|Acc/Gcc|T311A|391|PAX5|protein_coding|CODING|ENST00000358127|8|1)".
 	      "\tB,D,D,B,P\t0.25\t5.97\t16.4504\t\t\t\t\t\t\t\t\t\t\n");
+}	
+if ($patient eq "DL2" and $cmp_type eq "rem_rel") {
+	print("DL2\trem_rel\trelapsing\tsnp\tMISSED\t\t7\t50450244\t.\tG\tA\tIKZF1\t\tMODERATE\tNON_SYNONYMOUS_CODING\t1\tyes\t5\t3\t3\t0\t0.00\t5\t4\t1\t0.2\tR56Q;R143Q\tEFF=EXON(MODIFIER|||||IKZF1|retained_intron|CODING|ENST00000471793|3|1),INTRON(MODIFIER||||289|IKZF1|protein_coding|CODING|ENST00000346667|3|1),INTRON(MODIFIER||||376|IKZF1|protein_coding|CODING|ENST00000349824|4|1),INTRON(MODIFIER||||66|IKZF1|protein_coding|CODING|ENST00000426121|1|1|WARNING_TRANSCRIPT_NO_START_CODON),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R143Q|226|IKZF1|protein_coding|CODING|ENST00000440768|5|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R143Q|432|IKZF1|protein_coding|CODING|ENST00000357364|5|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R143Q|477|IKZF1|protein_coding|CODING|ENST00000359197|5|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R143Q|477|IKZF1|protein_coding|CODING|ENST00000439701|5|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R143Q|519|IKZF1|protein_coding|CODING|ENST00000331340|5|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R56Q|432|IKZF1|protein_coding|CODING|ENST00000343574|4|1),NON_SYNONYMOUS_CODING(MODERATE|MISSENSE|cGg/cAg|R56Q|432|IKZF1|protein_coding|CODING|ENST00000438033|4|1)\tD,D,D\t0\t6.08\t20.6634\tZinc_finger,_C2H2_(1)|Zinc_finger,_C2H2-type/integrase,_DNA-binding_(1)\t\t\t\t\t\t\t\t\t\n");
 }	
 
 $vcf->close();

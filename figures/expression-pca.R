@@ -37,8 +37,8 @@ for (q in c(0)) {
   
   # plot
   par(mar=c(5,2,5,9)) ; par(xpd=TRUE)
-  plot(MDS[,1], MDS[,2], type='n', xlab='', ylab='', xlim=xlim, main=sprintf("Top %.0f%% most variable genes (n=%d)", (1-q)*100, nrow(expr.filt)))
-  text(MDS[ann$UPN,"x"], MDS[ann$UPN,"y"], ann$UPN, col=colors[as.integer(ann$Group)], cex=0.9)
+  plot(MDS[,1], MDS[,2], xlab='', ylab='', xlim=xlim, main="", pch=20, col=colors[as.integer(ann$Group)], cex=1.5)
+  text(MDS[ann$UPN,"x"], MDS[ann$UPN,"y"]-8, ann$UPN, col=colors[as.integer(ann$Group)], cex=0.9)
   legend(x=par("usr")[2]+1, y=max(par("usr")[3:4]), legend=levels(ann$Group), col=colors, pch=19, cex=1.3)
 }
 
