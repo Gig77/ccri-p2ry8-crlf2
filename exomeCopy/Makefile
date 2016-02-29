@@ -35,6 +35,10 @@ allpatients.compiled-segments.exomeCopy.tsv: $(foreach P, $(PATIENTS_MATCHED), $
 allpatients.filtered-segments.exomeCopy.tsv: allpatients.compiled-segments.exomeCopy.tsv /mnt/projects/generic/scripts/exomeCopy/filter-segments.R
 	Rscript /mnt/projects/generic/scripts/exomeCopy/filter-segments.R
 	mv $@.part $@
+	
+filtered-cnvs.paper.tsv: allpatients.filtered-segments.exomeCopy.tsv /mnt/projects/p2ry8-crlf2/scripts/filter-cnvs-paper.R 
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/filter-cnvs-paper.R 
+	mv $@.part $@
 	 
 .PHONY: circos
 circos: circos/allpatients.diagnosis.circos.png circos/allpatients.relapse.circos.png

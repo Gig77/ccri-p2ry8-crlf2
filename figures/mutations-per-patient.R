@@ -6,6 +6,11 @@ warnings()
 t <- read.delim("/mnt/projects/p2ry8-crlf2/results/filtered-variants.tsv", stringsAsFactors=F)
 t <- t[t$status != "REJECT" & t$freq_leu >= 0.1 & t$non_silent==1,]
 
+# excluded samples
+t <- t[!t$patient %in% c("LU3", "SN18", "564", "460", "545", "MA5", "957"),]
+t <- t[t$patient != "KE17247" | t$sample != "rem_rel",]
+t <- t[t$patient != "BJ17183" | t$sample != "rem_rel",]
+
 # join diagnosis and relapse variants
 t.dia <- t[t$sample == "rem_dia", c("patient", "cohort", "chr", "pos", "ref", "alt", "freq_leu")]
 names(t.dia)[7] <- "dia"
@@ -41,7 +46,7 @@ make_plot <- function() {
 	par(mfrow=c(2,2), mar=c(7,5,1,1))
 	
 	# boxplot (include outliers)
-	boxplot(mut$dia, mut$rel, xlab="", ylab="# non-silent mutations", na.action=na.exclude, outline=F, cex.axis=1.5, xaxt="n", cex.lab=1.5, ylim=c(0,max(c(mut$dia, mut$rel), na.rm=T)))
+	boxplot(mut$dia, mut$rel, log="y", xlab="", ylab="# non-silent mutations", na.action=na.exclude, outline=F, cex.axis=1.4, xaxt="n", cex.lab=1.5, ylim=c(5,1000))
 	axis(1, at=c(1,2), cex.axis=1.5, labels=c(sprintf("diagnosis (n=%d)", sum(!is.na(mut$dia))), sprintf("relapse (n=%d)", sum(!is.na(mut$rel)))))
 	stripchart(list(mut$dia, mut$rel), method="jitter", vertical=T, pch=19, col=c("red", "blue"), add=T)
 	#print(sprintf("P-value Kruskal-Wallis: %.2g", test$p.value))

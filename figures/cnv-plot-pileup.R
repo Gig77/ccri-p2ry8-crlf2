@@ -41,16 +41,10 @@ samples = rbind(samples, setNames(data.frame("737R3", "IKZF1", "Array", stringsA
 #region <- "ACSM2A"; chr <- "chr16"; start <- 20318327; end <- 20643523
 #region <- "BTG1"; chr <- "chr12"; start <- 91278699; end <- 92889529
 
-# get WES CNVs
-cnv.wes <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv", stringsAsFactors = F)
-cnv.wes$seqnames <- paste0("chr", cnv.wes$seqnames)
-cnv.wes$start <- cnv.wes$start-2000 ; cnv.wes$end <- cnv.wes$end+2000  # better align segments with exons of gene model
-cnv.wes.gr <- makeGRangesFromDataFrame(cnv.wes, keep.extra.columns = T)
-
-# get array CNVs
-cnv.arr <- read.delim("/mnt/projects/p2ry8-crlf2/results/cnvs.snp_arrays.txt", stringsAsFactors = F)
-cnv.arr$seqnames <- paste0("chr", cnv.arr$seqnames)
-cnv.arr.gr <- makeGRangesFromDataFrame(cnv.arr, keep.extra.columns = T)
+# PCR CNVs
+cnv.pcr <- data.frame(sample.name=character(0), seqnames=character(0), start=numeric(0), end=numeric(0), copy.count=integer(0))
+cnv.pcr <- rbind(cnv.pcr, setNames(data.frame("N7D", "chr7", 50442236, 50462204, 1, stringsAsFactors = F), names(cnv.pcr))) # exon 4-7
+cnv.pcr.gr <- makeGRangesFromDataFrame(cnv.pcr, keep.extra.columns = T)
 
 # MLPA CNVs
 cnv.mlpa <- data.frame(sample.name=character(0), seqnames=character(0), start=numeric(0), end=numeric(0), copy.count=integer(0))
@@ -60,8 +54,8 @@ cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("108D", "chr7", 50442236, 504753
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("108R", "chr7", 50442236, 50475384, 1, stringsAsFactors = F), names(cnv.mlpa)))  # exon 4-8
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("HV57D", "chr7", 50442236, 50462204, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-7
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("HV57R", "chr7", 50442236, 50462204, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-7
-cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("HV80D", "chr7", 50442236, 50607726, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-8 (incl. neighboring gene DDC)
-cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("HV80R", "chr7", 50442236, 50607726, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-8 (incl. neighboring gene DDC)
+cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("HV80D", "chr7", 50411817, 50607726, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-8 (incl. neighboring gene DDC); start coordinate adjusted to SNP-array of HV80R
+cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("HV80R", "chr7", 50411817, 50607726, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-8 (incl. neighboring gene DDC); start coordinate adjusted to SNP-array of HV80R
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("DS10898D", "chr7", 50342375, 50462204, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 1-7
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("DS10898R", "chr7", 50342375, 50462204, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 1-7
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("GI8R", "chr7", 50442236, 50462204, 1, stringsAsFactors = F), names(cnv.mlpa)))  # exon 4-7
@@ -69,10 +63,23 @@ cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("B36R", "chr7", 50000000, 504753
 cnv.mlpa <- rbind(cnv.mlpa, setNames(data.frame("KT14158D", "chr7", 50442236, 50475384, 1, stringsAsFactors = F), names(cnv.mlpa))) # exon 4-8
 cnv.mlpa.gr <- makeGRangesFromDataFrame(cnv.mlpa, keep.extra.columns = T)
 
-# PCR CNVs
-cnv.pcr <- data.frame(sample.name=character(0), seqnames=character(0), start=numeric(0), end=numeric(0), copy.count=integer(0))
-cnv.pcr <- rbind(cnv.pcr, setNames(data.frame("N7D", "chr7", 50442236, 50462204, 1, stringsAsFactors = F), names(cnv.pcr))) # exon 4-7
-cnv.pcr.gr <- makeGRangesFromDataFrame(cnv.pcr, keep.extra.columns = T)
+# get WES CNVs
+cnv.wes <- read.delim("/mnt/projects/p2ry8-crlf2/results/exomeCopy/allpatients.filtered-segments.exomeCopy.tsv", stringsAsFactors = F)
+cnv.wes$seqnames <- paste0("chr", cnv.wes$seqnames)
+cnv.wes$start <- cnv.wes$start-2000 ; cnv.wes$end <- cnv.wes$end+2000  # better align segments with exons of gene model
+# 2016-02-22 make diagnosis/relapse match
+cnv.wes$start[cnv.wes$sample.name=="N7R" & grepl("IKZF1", cnv.wes$genes)] <- cnv.pcr$start[cnv.pcr$sample.name=="N7D"]
+cnv.wes$end[cnv.wes$sample.name=="N7R" & grepl("IKZF1", cnv.wes$genes)] <- cnv.pcr$end[cnv.pcr$sample.name=="N7D"]
+cnv.wes$end[cnv.wes$sample.name=="108R2" & grepl("IKZF1", cnv.wes$genes)] <- cnv.mlpa$end[cnv.mlpa$sample.name=="108R"]
+cnv.wes.gr <- makeGRangesFromDataFrame(cnv.wes, keep.extra.columns = T)
+
+# get array CNVs
+cnv.arr <- read.delim("/mnt/projects/p2ry8-crlf2/results/cnvs.snp_arrays.txt", stringsAsFactors = F)
+cnv.arr$seqnames <- paste0("chr", cnv.arr$seqnames)
+# 2016-02-22: correct IKZF1 breakpoints in 737R3 to those in 737R
+cnv.arr <- rbind(cnv.arr[cnv.arr$sample != "737R3" | !grepl("IKZF1", cnv.arr$genes),], cnv.arr[cnv.arr$sample=="737R" & grepl("IKZF1", cnv.arr$genes),])
+cnv.arr$sample[(length(cnv.arr$sample)-2):length(cnv.arr$sample)] <- "737R3"
+cnv.arr.gr <- makeGRangesFromDataFrame(cnv.arr, keep.extra.columns = T)
 
 #d <- rbind(d,data.frame(source="MLPA", seqnames="7", start=50435703, end=50459561, width=23859, strand="*", sample.name="108R", copy.count=1, log.odds=NA, nranges=NA, targeted.bp=NA, genes="IKZF1", overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA)) 
 #d <- rbind(d,data.frame(source="MLPA", seqnames="7", start=50435703, end=50459561, width=23859, strand="*", sample.name="DL2R", copy.count=1, log.odds=NA, nranges=NA, targeted.bp=NA, genes="IKZF1", overlap.samples=NA, overlap.count=NA, overlap.count.tumor=NA)) 

@@ -9,22 +9,25 @@ registerDoMC(40) # number of cores for parallel execution
 rm(list=ls())
 
 cychp = list(
-  "108D"  = "NA",
-  "108R"  = "NA",
-  "108R2" = "NA",
-  "737D"  = "/mnt/projects/p2ry8-crlf2/data/snparray/A1311-15.CEL._2007-2323.na33.cyhd.cychp.txt",
-  "737R"  = "/mnt/projects/p2ry8-crlf2/data/snparray/2009-2490_A1311-16.CEL._na33.cyhd.cychp.txt",
-  "737R2" = "NA",
-  "737R3" = "/mnt/projects/p2ry8-crlf2/data/snparray/2012-2407._na33.cyhd.cychp.txt",
-  "715D"  = "/mnt/projects/p2ry8-crlf2/data/snparray/2007-0966_A1311-12.CEL.NA33.cyhd.cychp.txt",
-  "715R"  = "/mnt/projects/p2ry8-crlf2/data/snparray/2008-2775_A1311-13.CEL..NA33.cyhd.cychp.txt",
-  "715R3" = "/mnt/projects/p2ry8-crlf2/data/snparray/715_RR._na33.cyhd.ND.cychp.txt",
-  "92D"   = "/mnt/projects/p2ry8-crlf2/data/snparray/94-1115_92_D._na33.cyhd.cychp.txt",
-  "92R"   = "/mnt/projects/p2ry8-crlf2/data/snparray/98-0366_92_R._na33.cyhd.cychp.txt",
-  "839D"  = "/mnt/projects/p2ry8-crlf2/data/snparray/2009-1595_839_D._na33.cyhd.cychp.txt",
-  "839R"  = "/mnt/projects/p2ry8-crlf2/data/snparray/2013-0667_839_R._na33.cyhd.cychp.txt",
-  "948D"  = "/mnt/projects/p2ry8-crlf2/data/snparray/2010-3831._na33.cyhd.cychp.txt",
-  "HV80R" = "/mnt/projects/p2ry8-crlf2/data/snparray/St.Anna_HV80-R.NA33.cyhd.cychp.txt"
+  "108R2"    = "/mnt/projects/p2ry8-crlf2/data/snparray/108_R_4.cyhd.cychp.txt",
+  "737D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/A1311-15.CEL._2007-2323.na33.cyhd.cychp.txt",
+  "737R"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2009-2490_A1311-16.CEL._na33.cyhd.cychp.txt",
+  "737R3"    = "/mnt/projects/p2ry8-crlf2/data/snparray/2012-2407._na33.cyhd.cychp.txt",
+  "715D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2007-0966_A1311-12.CEL.NA33.cyhd.cychp.txt",
+  "715R"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2008-2775_A1311-13.CEL..NA33.cyhd.cychp.txt",
+  "715R3"    = "/mnt/projects/p2ry8-crlf2/data/snparray/715_RR._na33.cyhd.ND.cychp.txt",
+  "92D"      = "/mnt/projects/p2ry8-crlf2/data/snparray/94-1115_92_D._na33.cyhd.cychp.txt",
+  "92R"      = "/mnt/projects/p2ry8-crlf2/data/snparray/98-0366_92_R._na33.cyhd.cychp.txt",
+  "839D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2009-1595_839_D._na33.cyhd.cychp.txt",
+  "839R"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2013-0667_839_R._na33.cyhd.cychp.txt",
+  "948D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2010-3831._na33.cyhd.cychp.txt",
+  "HV80R"    = "/mnt/projects/p2ry8-crlf2/data/snparray/St.Anna_HV80-R.NA33.cyhd.cychp.txt",
+  "242D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/99-2714_A1311-08.CEL.na33.cyhd.cychp.txt",
+  "379D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/379D.CEL.cyhd.cychp.txt", # 2001-3936
+  "833D"     = "NA", # 2009-1306
+  "957D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/957D.CEL.cyhd.cychp.txt", # 2011-0318
+  "961D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/961D.CEL.cyhd.cychp.txt", # 2011-0419
+  "KT14158D" = "/mnt/projects/p2ry8-crlf2/data/snparray/KT14158-Dg_St.Anna.NA33.cyhd.cychp.txt"
 )
 
 regions = data.frame(patient=character(0), name=character(0), chr=character(0), start=numeric(0), end=numeric(0), genes=character(0), stringsAsFactors = F)
@@ -71,9 +74,14 @@ regions = rbind(regions, setNames(data.frame("HV80R", "IKZF1", "7", 49925794, 50
 
 regions = rbind(regions, setNames(data.frame("N7D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
 regions = rbind(regions, setNames(data.frame("N7R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
+regions = rbind(regions, setNames(data.frame("N7D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
+regions = rbind(regions, setNames(data.frame("N7R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
 
 regions = rbind(regions, setNames(data.frame("DL2D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
 regions = rbind(regions, setNames(data.frame("DL2R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
+
+regions = rbind(regions, setNames(data.frame("HV57D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
+regions = rbind(regions, setNames(data.frame("HV57R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
 
 # PAX5 ---------------
 
@@ -151,12 +159,16 @@ tracks.all <- foreach(i=1:nrow(regions), .verbose = FALSE) %dopar% {
   wes.gr <- GRanges(seqnames=paste0("chr", region$chr), 
                     ranges=fit[[1]][[region$chr]]@ranges[[1]], 
                     mcols=data.frame(
-                      Normal=ifelse(states[path] == 2, ratio, NA),
-                      Loss=ifelse(states[path] < 2, ratio, NA),
-                      Gain=ifelse(states[path] > 2, ratio, NA)
+                      Normal=as.numeric(ifelse(states[path] == 2, ratio, NA)),
+                      Loss=as.numeric(ifelse(states[path] < 2, ratio, NA)),
+                      Gain=as.numeric(ifelse(states[path] > 2, ratio, NA))
                     ))
 
   # configure tracks
+  patient.label <- region$patient
+  if (patient.label == "737R3") patient.label <- "737RR"
+  if (patient.label == "108R2") patient.label <- "108RR"
+  
   tracks[["ideogram"]] <- IdeogramTrack(genome = "hg19", chromosome = paste0("chr", region$chr), showId=F, showTitle=T, 
                                   name=paste0("chr", region$chr), fontcolor.title="black", background.title="white", rotation.title=0, fontsize=40)
   tracks[["axis"]] <- GenomeAxisTrack(labelPos="above", name=paste0("chr", region$chr), lwd=0.5, cex=0.25, col="black", fontcolor="black", fontface=2)
@@ -165,15 +177,15 @@ tracks.all <- foreach(i=1:nrow(regions), .verbose = FALSE) %dopar% {
                                       stacking="squish", collapseTranscripts = "longest",
                                       fontsize=7, fontcolor.group="black", background.title="white")
   tracks[["genes"]]@range <- tracks[["genes"]]@range[tracks[["genes"]]@range$symbol %in% unlist(strsplit(region$genes, ","))]
-  tracks[["array"]] <- DataTrack(lrr.gr, name = paste(region$patient, "Array"), type = c("p", "g"), groups=c("Gain", "Loss", "Normal"), col=c("red", "blue", "darkgray"), 
+  tracks[["array"]] <- DataTrack(lrr.gr, name = paste(patient.label, "Array"), type = c("p", "g"), groups=c("Gain", "Loss", "Normal"), col=c("red", "blue", "darkgray"), 
                        cex=0.2, lty.grid=2, v=0, ylim=c(-1.8, 1.8), alpha.title = 1, alpha=0.9, fontsize=40, col.title="black", col.axis="black")
   tracks[["sep"]] <- DataTrack(ylim=c(1,1), showTitle=F, showAxis=F, background.panel = "lightgray")
-  tracks[["wes"]] <- DataTrack(wes.gr, name = paste(region$patient, "WES"), type = c("p", "g"), groups=c("Gain", "Loss", "Normal"), col=c("darkgray", "blue", "red"), 
+  tracks[["wes"]] <- DataTrack(wes.gr, name = paste(patient.label, "WES"), type = c("p", "g"), groups=c("Gain", "Loss", "Normal"), col=c("darkgray", "blue", "red"), 
                          cex=0.4, lty.grid=2, v=0, ylim=c(0.1,1.9), alpha.title = 1, alpha=0.9, fontsize=40, col.title="black", col.axis="black")
   tracks
 #  plot(
 #    x=fit[[region$patient]][[region$chr]], 
-#    main=paste(region$patient, region$name), 
+#    main=paste(patient.label, region$name), 
 #    cex=0.7, 
 #    cex.main=1, 
 #    cex.axis=1, 

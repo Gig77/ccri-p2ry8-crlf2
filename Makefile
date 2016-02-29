@@ -349,6 +349,10 @@ filtered-variants.tsv: $(foreach P, $(PATIENTS_MATCHED), filtered-variants/$P_re
 	cat $(filter-out $(lastword $^), $^) >> $@.part
 	mv $@.part $@
 
+filtered-variants.paper.tsv: filtered-variants.tsv /mnt/projects/p2ry8-crlf2/scripts/filter-variants-paper.R 
+	Rscript /mnt/projects/p2ry8-crlf2/scripts/filter-variants-paper.R 
+	mv $@.part $@
+	
 filtered-variants.xenografts.tsv: $(foreach P, $(PATIENTS_XENO), filtered-variants/$P_rem_xeno.filtered.tsv) /mnt/projects/p2ry8-crlf2/scripts/filter-variants.pl 
 	perl /mnt/projects/p2ry8-crlf2/scripts/filter-variants.pl --header 2>&1 1>$@.part | $(LOG)
 	cat $(filter-out $(lastword $^), $^) >> $@.part
@@ -431,8 +435,9 @@ picard: $(foreach P, $(PATIENTS_MATCHED), picard/$PC.picard.insertsize.out picar
 		$(foreach P, $(PATIENTS_REL2), picard/$PR2.picard.insertsize.out) \
 		$(foreach P, $(PATIENTS_REL3), picard/$PR3.picard.insertsize.out) \
 		$(foreach P, $(PATIENTS_XENO), picard/$P.picard.insertsize.out) \
-		picard/second_batch.insertsize.pdf
-
+		picard/second_batch.insertsize.pdf \
+		picard/allsamples.hs_metrics.picard.tsv
+	
 picard/%.picard.insertsize.out picard/%.picard.insertsize.pdf: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /data_synology/software/picard-tools-1.114/CollectInsertSizeMetrics.jar
 	mkdir -p picard
 	java -jar /data_synology/software/picard-tools-1.114/CollectInsertSizeMetrics.jar \
@@ -443,6 +448,32 @@ picard/%.picard.insertsize.out picard/%.picard.insertsize.pdf: /mnt/projects/p2r
 	mv picard/$*.picard.insertsize.pdf.part picard/$*.picard.insertsize.pdf
 	mv picard/$*.picard.insertsize.out.part picard/$*.picard.insertsize.out
 
+picard/%.hs_metrics: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam /mnt/projects/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed
+	mkdir -p picard
+	/data_synology/software/samtools-0.1.19/samtools view -H $< 2>&1 1> picard/$*.targetedregions.for-picard.bed | $(LOG)
+	gawk 'BEGIN { OFS="\t"} {print $$1,$$2,$$3,"+",$$4 }' /mnt/projects/generic/data/illumina/nexterarapidcapture_exome_targetedregions.nochr.bed >> picard/$*.targetedregions.for-picard.bed
+	java -XX:+UseParallelGC -XX:ParallelGCThreads=8 -Xmx2g -Djava.io.tmpdir=`pwd`/tmp -jar /data_synology/software/picard-tools-1.114/CalculateHsMetrics.jar \
+		BAIT_INTERVALS=picard/$*.targetedregions.for-picard.bed \
+		TARGET_INTERVALS=picard/$*.targetedregions.for-picard.bed \
+		INPUT=$< \
+		OUTPUT=$@.part \
+		REFERENCE_SEQUENCE=/mnt/projects/generic/data/broad/hs37d5.fa \
+		PER_TARGET_COVERAGE=picard/$*.hs_metrics.per_target_coverage.part \
+		VALIDATION_STRINGENCY=LENIENT \
+		2>&1 | $(LOG)
+	mv picard/$*.hs_metrics.per_target_coverage.part picard/$*.hs_metrics.per_target_coverage
+	rm picard/$*.targetedregions.for-picard.bed
+	mv $@.part $@
+
+picard/allsamples.hs_metrics.picard.tsv:  $(foreach P, $(PATIENTS_MATCHED), picard/$PC.hs_metrics picard/$PD.hs_metrics picard/$PR.hs_metrics) \
+       									  $(foreach P, $(PATIENTS_DIA_ONLY), picard/$PC.hs_metrics picard/$PD.hs_metrics) \
+       									  $(foreach P, $(PATIENTS_REL2), picard/$PR2.hs_metrics) \
+       									  $(foreach P, $(PATIENTS_REL3), picard/$PR3.hs_metrics) \
+       									  $(foreach P, $(PATIENTS_XENO), picard/$P.hs_metrics) 
+	grep BAIT_SET picard/108D.hs_metrics > $@.part
+	grep 3137454505 $^ | cut -f 2 -d ':' >> $@.part
+	mv $@.part $@
+	
 picard/second_batch.insertsize.pdf: $(foreach P, m1966-Y-dia m1035-108-dia m1060-108-rel m252-379-dia m1041-737-dia m1069-737-rel m247-833-dia m1059-92-dia m1037-839-dia m248-841-dia AL9890R2 S23R3, picard/$P.picard.insertsize.pdf)
 	gs -dBATCH -dNOPAUSE -q -sDEVICE=pdfwrite -sOutputFile=$@.part $^
 	mv $@.part $@

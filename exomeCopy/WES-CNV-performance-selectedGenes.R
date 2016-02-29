@@ -2,6 +2,8 @@
 d <- read.delim("/mnt/projects/p2ry8-crlf2/data/WES_CNADetection_Performance.txt", skip = 1, stringsAsFactors = F, na.strings = "")
 names(d) <- c("Sample", "Cohort", "PAR1.SNP", "PAR1.PCR", "PAR1.WES", "IKZF1.SNP", "IKZF1.MLPA", "IKZF1.WES", "CDKN2A.SNP", "CDKN2A.MLPA", "CDKN2A.WES", "PAX5.SNP", "PAX5.FISH", "PAX5.WES", "Comment")
 
+d$IKZF1.MLPA[d$Sample=="GI13R"] <- "del" # false-negative by MLPA
+
 # setup result dataframe
 perf <- data.frame("Gene" = character(0), "Metric" = character(0), "Percent" = numeric(0))
 
