@@ -13,8 +13,8 @@ cychp = list(
   "737D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/A1311-15.CEL._2007-2323.na33.cyhd.cychp.txt",
   "737R"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2009-2490_A1311-16.CEL._na33.cyhd.cychp.txt",
   "737R3"    = "/mnt/projects/p2ry8-crlf2/data/snparray/2012-2407._na33.cyhd.cychp.txt",
-  "715D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2007-0966_A1311-12.CEL.NA33.cyhd.cychp.txt",
-  "715R"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2008-2775_A1311-13.CEL..NA33.cyhd.cychp.txt",
+#  "715D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2007-0966_A1311-12.CEL.NA33.cyhd.cychp.txt",   # low-quality WES data
+#  "715R"     = "/mnt/projects/p2ry8-crlf2/data/snparray/2008-2775_A1311-13.CEL..NA33.cyhd.cychp.txt",  # low-quality WES data
   "715R3"    = "/mnt/projects/p2ry8-crlf2/data/snparray/715_RR._na33.cyhd.ND.cychp.txt",
   "92D"      = "/mnt/projects/p2ry8-crlf2/data/snparray/94-1115_92_D._na33.cyhd.cychp.txt",
   "92R"      = "/mnt/projects/p2ry8-crlf2/data/snparray/98-0366_92_R._na33.cyhd.cychp.txt",
@@ -24,7 +24,6 @@ cychp = list(
   "HV80R"    = "/mnt/projects/p2ry8-crlf2/data/snparray/St.Anna_HV80-R.NA33.cyhd.cychp.txt",
   "242D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/99-2714_A1311-08.CEL.na33.cyhd.cychp.txt",
   "379D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/379D.CEL.cyhd.cychp.txt", # 2001-3936
-  "833D"     = "NA", # 2009-1306
   "957D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/957D.CEL.cyhd.cychp.txt", # 2011-0318
   "961D"     = "/mnt/projects/p2ry8-crlf2/data/snparray/961D.CEL.cyhd.cychp.txt", # 2011-0419
   "KT14158D" = "/mnt/projects/p2ry8-crlf2/data/snparray/KT14158-Dg_St.Anna.NA33.cyhd.cychp.txt"
@@ -34,98 +33,41 @@ regions = data.frame(patient=character(0), name=character(0), chr=character(0), 
 
 # PAR1 ---------------
 
-regions = rbind(regions, setNames(data.frame("737D", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R3", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-
-#regions = rbind(regions, setNames(data.frame("715D", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-#regions = rbind(regions, setNames(data.frame("715R", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("715R3", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("92D", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("92R", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("839D", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("839R", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("948D", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("HV80R", "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
+for (s in names(cychp)) {
+  regions = rbind(regions, setNames(data.frame(s, "PAR1", "X", 1039250, 1984490, "P2RY8,CRLF2", stringsAsFactors = F), names(regions)))
+}
 
 # IKZF1 ---------------
 
-regions = rbind(regions, setNames(data.frame("737D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R3", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions))) # zoom in
-regions = rbind(regions, setNames(data.frame("737R3", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions))) # zoom in
-
-regions = rbind(regions, setNames(data.frame("715R3", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("92D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("92R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("839D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("839R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("948D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("HV80R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("N7D", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("N7R", "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("N7D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("N7R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("DL2D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("DL2R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("HV57D", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("HV57R", "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions)))
+for (s in c(names(cychp), "N7D", "N7R", "DL2D", "DL2R", "HV57D", "HV57R")) {
+  regions = rbind(regions, setNames(data.frame(s, "IKZF1", "7", 49925794, 50867611, "IKZF1", stringsAsFactors = F), names(regions)))
+  regions = rbind(regions, setNames(data.frame(s, "IKZF1", "7", 50300000, 50500000, "IKZF1", stringsAsFactors = F), names(regions))) # zoom in
+}
 
 # PAX5 ---------------
 
-regions = rbind(regions, setNames(data.frame("737D", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R3", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("715R3", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("92D", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("92R", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("839D", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("839R", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("948D", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("HV80R", "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
+for (s in names(cychp)) {
+  regions = rbind(regions, setNames(data.frame(s, "PAX5", "9", 36430065, 37406492, "PAX5", stringsAsFactors = F), names(regions)))
+}
 
 # CDKN2A ---------------
 
-regions = rbind(regions, setNames(data.frame("737D", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("737R3", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
+for (s in names(cychp)) {
+  regions = rbind(regions, setNames(data.frame(s, "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
+}
 
-regions = rbind(regions, setNames(data.frame("715R3", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("92D", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("92R", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("839D", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-regions = rbind(regions, setNames(data.frame("839R", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("948D", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-
-regions = rbind(regions, setNames(data.frame("HV80R", "CDKN2A", "9", 21519360, 22469828, "CDKN2A", stringsAsFactors = F), names(regions)))
-
+# get array CNV segmented data
+cnv.array <- read.delim("/mnt/projects/p2ry8-crlf2/results/cnvs.snp_arrays.txt", stringsAsFactor=F)
+cnv.array$seqnames <- paste0("chr", cnv.array$seqnames)
+names(cnv.array)[names(cnv.array)=="copy.count"] <- "Value"
 
 cols <- c("darkblue", "blue", "darkgray", "red", "darkred", "darkred", "darkred")
 par(pch=19)
 
 # collect data and build tracks; parallelize to speed up
 
-tracks.all <- foreach(i=1:nrow(regions), .verbose = FALSE) %dopar% {
+#tracks.all <- foreach(i=5, .verbose = TRUE) %dopar% {
+tracks.all <- foreach(i=1:nrow(regions), .verbose = TRUE) %dopar% {
   tracks <- list()
   region <- regions[i,]
 
@@ -136,7 +78,20 @@ tracks.all <- foreach(i=1:nrow(regions), .verbose = FALSE) %dopar% {
     array <- read.table(pipe(cmd), header=T, stringsAsFactors = F)
     array$Chromosome <- paste0("chr", array$Chromosome)
     lrr.gr <- makeGRangesFromDataFrame(array[array$Type=="LRR",c("Chromosome", "Start", "Value")], start.field = "Start", end.field = "Start", keep.extra.columns = T)
-    cn.gr <- makeGRangesFromDataFrame(array[array$Type=="CN",c("Chromosome", "Start", "End", "Value")], start.field = "Start", end.field = "End", keep.extra.columns = T)
+  
+    # prefer CN calls from externally provided file, otherwise use CN segments stored inside .cychp file
+    if (region$patient %in% cnv.array$sample) {  
+      cn.gr <- makeGRangesFromDataFrame(cnv.array[cnv.array$sample == region$patient & cnv.array$Value != 2, c("seqnames", "start", "end", "Value")], start.field = "start", end.field = "end", keep.extra.columns = T)
+      
+      # fill in diploid gaps in plotting region
+      diff <- setdiff(GRanges(paste0("chr", region$chr), IRanges(region$start, region$end)), cn.gr)
+      if (length(diff) > 0) {
+        diff$Value <- 2
+        cn.gr <- c(cn.gr, diff)
+      }
+    } else {
+      cn.gr <- makeGRangesFromDataFrame(array[array$Type=="CN",c("Chromosome", "Start", "End", "Value")], start.field = "Start", end.field = "End", keep.extra.columns = T)
+    }
     
     # encode CN state into LRR
     o <- findOverlaps(lrr.gr, cn.gr)

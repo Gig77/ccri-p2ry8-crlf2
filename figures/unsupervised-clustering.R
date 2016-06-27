@@ -2,11 +2,13 @@ library(biomaRt)
 mart = useMart(biomart="ENSEMBL_MART_ENSEMBL", host="grch37.ensembl.org", path="/biomart/martservice", dataset="hsapiens_gene_ensembl") # GRCh37, v75
 hgnc <- getBM(attributes=c("hgnc_symbol", "ensembl_gene_id"), mart=mart)
 
-# build expression matrix with all samples
+# read sample annotation
 
 sample.table <- read.delim("/mnt/projects/ikaros/data/all_samples_unsupervised_clustering.csv", stringsAsFactors = F, row.names = "ID", na.strings = "")
 sample.table$IKZF1 <- as.factor(sample.table$IKZF1)
 sample.table$Subtype[grepl("CD19", sample.table$Subtype)] <- "CD19"
+
+# build count matrix
 
 counts <- NULL
 for (i in 1:nrow(sample.table)) {
@@ -22,31 +24,61 @@ for (i in 1:nrow(sample.table)) {
 counts <- as.matrix(counts)
 counts[is.na(counts)] <- 0
 
-library("DESeq2")
-cds <- DESeqDataSetFromMatrix(countData=counts, colData=sample.table, design= ~1)
-cds <- estimateSizeFactors(cds)
-vst <- varianceStabilizingTransformation(cds)
+# filter lowly expressed genes
+
+counts.filtered <- counts[rowSums(counts) >= 100,]
+print(sprintf("Clustering based on %d expressed genes", nrow(counts.filtered)))
+
+# EDAseq within-lane and between-lane normalization
+
+gclength <- getBM(attributes=c("ensembl_gene_id", "percentage_gc_content", "transcript_length"), mart=mart)
+gclength <- gclength[order(gclength$ensembl_gene_id, -gclength$transcript_length),]
+gclength <- gclength[!duplicated(gclength$ensembl_gene_id),]
+gclength <- data.frame(id=gclength$ensembl_gene_id, gc=gclength$percentage_gc_content, length=gclength$transcript_length)
+rownames(gclength) <- gclength$id
+gclength <- gclength[,c("gc", "length")]
+
+library(EDASeq)
+common <- intersect(rownames(counts.filtered), rownames(gclength))
+edaseq.counts <- newSeqExpressionSet(counts=counts.filtered[common,], featureData = gclength[common,])
+edaseq.withinLane <- withinLaneNormalization(edaseq.counts, "gc", which="full", offset=TRUE, round=FALSE)
+edaseq.betweenLane <- betweenLaneNormalization(edaseq.withinLane, which="full", offset=TRUE, round=FALSE)
+counts.edaseq.log <- log(normCounts(edaseq.betweenLane) + 0.1, 2)
+
+pdf("/mnt/projects/p2ry8-crlf2/results/rnaseq-unsupervised-clustering.pdf", width=10, height=10)
 
 # ----
 # sample-by-sample heatmap
 # ----
 
-# select genes based on certain minimum expression level across all samples
-selected.genes <- rowSums(counts(cds, normalized=TRUE)) >= 500
-#selected.genes <- apply(counts(cds, normalized=TRUE), 1, max) > 100
-print(sprintf("Clustering based on %d genes", sum(selected.genes)))
+# filter for most variable genes across samples
 
-# clustering based on gene sets
-#selected.genes <- hgnc$hgnc_symbol[match(rownames(cds), hgnc$ensembl_gene_id)] %in% c("RAG1", "PCNA", "DNTT", "RAG2", "IGLL1", "VPREB3")
+percentMostVariable <- 0.4
+cov <- apply(counts.edaseq.log, 1, function(x) (quantile(x, 0.75)-quantile(x, 0.25))/quantile(x, 0.5))
+counts.edaseq.log.mostvariable <- counts.edaseq.log[cov >= quantile(cov, 1-percentMostVariable),]
 
-# clustering
+# get distance matrix, mask diagonal for improved color range
 
-dists <- as.dist(1-cor(assay(vst)[selected.genes,], method="spearman")) # spearman correlation
+dists <- as.dist(1-cor(counts.edaseq.log.mostvariable, method="spearman")) # spearman correlation
+dists.matr <- as.matrix(dists)
+diag(dists.matr) <- rowMeans(dists.matr)
 
-pdf("/mnt/projects/p2ry8-crlf2/results/rnaseq-unsupervised-clustering.pdf")
+annotation.colors <- list(
+  Subtype=c("CD19" = "gray", "ER" = "red", "HD" = "blue", "iAMP21" = "yellow", "PC-only" = "black", "B-other" = "lightblue", "MLL pos" = "lightgreen", "BCR-ABL1" = "brown"),
+  IKZF1=c("del" = "blue", "dn" = "red", "wt" = "gray"),
+  PC=c("yes" = "black", "no" = "gray"),
+  chr21=c("normal" = "gray", "DS" = "blue", "trisomy" = "red", "iAMP21" = "yellow"),
+  RNAExtrDate=c("2014-02-10" = "gray", "2014-08-01" = "red", "2014-09-30" = "blue", "2015-04-02" = "yellow", "2015-04-07" = "black", "2015-08-28" = "lightblue", "Kamilla" = "lightgreen", "2016-02-03" = "orange", "2016-02-09" = "brown"),
+  RNAKit=c("Zymo" = "gray", "mirVana" = "black"),
+  PrepDate=c("2014-09-16" = "gray", "2014-09-18" = "red", "2014-10-13" = "blue", "2015-05-05" = "yellow", "2015-05-06" = "black", "2016-02-09/10" = "lightblue", "2016-02-11/12" = "lightgreen", "2016-02-05/08" = "orange"),
+  Flowcell=c("C57C3ACXX" = "gray", "C7K1TACXX" = "blue", "C88A8ACXX" = "red", "C97W1ANXX" = "yellow"),
+  Origin=c("AT" = "gray", "GER" = "black"),
+  Timepoint=c("diagnosis" = "gray", "relapse" = "black")
+)
+
 pheatmap(
-  as.matrix(dists), 
-  main = sprintf("Clustering based on %d genes", sum(selected.genes)),
+  dists.matr, 
+  main = sprintf("Clustering based on %d genes\n(%d%% most variable expressed genes)", nrow(counts.edaseq.log.mostvariable), as.integer(percentMostVariable*100)),
   clustering_method = "average",
   clustering_distance_rows = dists, 
   clustering_distance_cols = dists, 
@@ -55,18 +87,7 @@ pheatmap(
   fontsize = 6,
   labels_col = sample.table$UPN[match(attr(dists, "Labels"), rownames(sample.table))],
   col = colorRampPalette(brewer.pal(10, "RdBu"))(256),
-  annotation_colors = list(
-    Subtype=c("CD19" = "gray", "ER" = "red", "HD" = "blue", "iAMP21" = "yellow", "B-other" = "black"),
-    IKZF1=c("del" = "blue", "dn" = "red", "wt" = "gray"),
-    PC=c("yes" = "black"),
-    chr21=c("normal" = "gray", "DS" = "blue", "trisomy" = "red", "iAMP21" = "yellow"),
-    RNAExtrDate=c("2014-02-10" = "gray", "2014-08-01" = "red", "2014-09-30" = "blue", "2015-04-02" = "yellow", "2015-04-07" = "black", "2015-08-28" = "lightblue", "Kamilla" = "lightgreen"),
-    RNAKit=c("Zymo" = "gray", "mirVana" = "black"),
-    PrepDate=c("2014-09-16" = "gray", "2014-09-18" = "red", "2014-10-13" = "blue", "2015-05-05" = "yellow", "2015-05-06" = "black"),
-    Flowcell=c("C57C3ACXX" = "gray", "C7K1TACXX" = "blue", "C88A8ACXX" = "red"),
-    Origin=c("AT" = "gray", "GER" = "black"),
-    Timepoint=c("diagnosis" = "gray", "relapse" = "black")
-  )
+  annotation_colors = annotation.colors
 )
 
 # ----
@@ -87,7 +108,7 @@ genesets[[sprintf("Top-%d DEGs IKNp-vs-IKCp", topN*2)]] <- IKNp.vs.IKCp.filt$ids
 # MSigDB gene sets
 
 gmt <- read.delim("/mnt/projects/generic/data/msigdb5.0/msigdb.v5.0.symbols.gmt", stringsAsFactors = F, header=F)
-for (geneset in c("PID_FAK_PATHWAY", "PID_VEGFR1_2_PATHWAY")) {
+for (geneset in c("PID_FAK_PATHWAY", "PID_VEGFR1_2_PATHWAY", "KEGG_JAK_STAT_SIGNALING_PATHWAY")) {
   geneset.genes <- gmt[toupper(gmt$V1)==geneset,c(-1,-2)]
   geneset.genes <- sort(unique(geneset.genes[geneset.genes != ""]))
   geneset.genes <- hgnc$ensembl_gene_id[match(geneset.genes, hgnc$hgnc_symbol)]
@@ -123,14 +144,14 @@ genesets[["IACOBUCCI_2012_IKAROS_DELETED_UP_OR_DN"]] <- c(genesets[["IACOBUCCI_2
 for (geneset in names(genesets)) {
   print(geneset)
   geneset.genes <- genesets[[geneset]]
-  mf <- assay(vst)[rownames(assay(vst)) %in% geneset.genes,]
+  mf <- counts.edaseq.log[rownames(counts.edaseq.log) %in% geneset.genes,]
   mf <- mf[apply(mf, 1, sd) > 0,]
   rownames(mf) <- ifelse(hgnc$hgnc_symbol[match(rownames(mf), hgnc$ensembl_gene_id)] != "", hgnc$hgnc_symbol[match(rownames(mf), hgnc$ensembl_gene_id)], rownames(mf))
 
   pheatmap(
     mf,
     main = geneset,
-    clustering_method = "complete",
+    clustering_method = "average",
     clustering_distance_rows = "correlation",
     clustering_distance_cols = "euclidean",
     col = rev(colorRampPalette(brewer.pal(10, "RdBu"))(256)),
@@ -139,18 +160,7 @@ for (geneset in names(genesets)) {
     fontsize_row = 5,
     labels_col = sample.table$UPN[match(colnames(mf), rownames(sample.table))],
     annotation_col = sample.table[,c("Subtype", "IKZF1", "PC", "chr21", "RNAExtrDate", "RNAKit", "PrepDate", "Flowcell", "Origin", "Timepoint"),drop=F],
-    annotation_colors = list(
-      Subtype=c("CD19" = "gray", "ER" = "red", "HD" = "blue", "iAMP21" = "yellow", "B-other" = "black"),
-      IKZF1=c("del" = "blue", "dn" = "red", "wt" = "gray"),
-      PC=c("yes" = "black"),
-      chr21=c("normal" = "gray", "DS" = "blue", "trisomy" = "red", "iAMP21" = "yellow"),
-      RNAExtrDate=c("2014-02-10" = "gray", "2014-08-01" = "red", "2014-09-30" = "blue", "2015-04-02" = "yellow", "2015-04-07" = "black", "2015-08-28" = "lightblue", "Kamilla" = "lightgreen"),
-      RNAKit=c("Zymo" = "gray", "mirVana" = "black"),
-      PrepDate=c("2014-09-16" = "gray", "2014-09-18" = "red", "2014-10-13" = "blue", "2015-05-05" = "yellow", "2015-05-06" = "black"),
-      Flowcell=c("C57C3ACXX" = "gray", "C7K1TACXX" = "blue", "C88A8ACXX" = "red"),
-      Origin=c("AT" = "gray", "GER" = "black"),
-      Timepoint=c("diagnosis" = "gray", "relapse" = "black")
-    ),
+    annotation_colors = annotation.colors,
     legend=F
   )
 }

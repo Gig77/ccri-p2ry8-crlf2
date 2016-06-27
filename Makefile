@@ -13,7 +13,7 @@ PATIENTS_REL3 = 715 737 S23
 PATIENTS_XENO = m1963-545-rel m1964-545-rel m1957-715-rel m1035-108-dia m1060-108-rel m252-379-dia m1041-737-dia m1069-737-rel m247-833-dia m1059-92-dia m1037-839-dia m248-841-dia m1977-G-dia m1967-Y-rel m1966-Y-dia
 
 #all: filtered-variants.cosmic.tsv snpeff/mutect_737_rem_rel1.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_rel2.dbsnp.snpeff.dbNSFP.vcf snpeff/mutect_737_rem_dia.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel1.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_rel2.indel.dbsnp.snpeff.dbNSFP.vcf snpeff/indels_737_rem_dia.indel.dbsnp.snpeff.dbNSFP.vcf
-all: snp fastqc gene-patient-matrix.tsv filtered-variants.cosmic.tsv filtered-variants.xenografts.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf coverage-chr21/allpatients.coverage-chr21.pdf picard loh snp-comparison/allsamples.snp-comparison.tsv figures impacted-genes.tsv
+all: snp fastqc gene-patient-matrix.tsv filtered-variants.paper.tsv filtered-variants.xenografts.cosmic.tsv filtered-variants.cosmic.merged.tsv coverage-region coverage-genome/allpatients.coverage-genome.pdf coverage-chr21/allpatients.coverage-chr21.pdf picard loh snp-comparison/allsamples.snp-comparison.tsv figures impacted-genes.tsv
 
 #-----------
 # DOWNLOAD
@@ -315,7 +315,7 @@ coverage-genome/%.xeno.coverage-genome.pdf: coverage-genome/%.coverage-genome.ts
 coverage-genome/%.coverage-genome.tsv: /mnt/projects/p2ry8-crlf2/data/bam/variant_calling_process_sample_%_realigned.bam
 	mkdir -p coverage-genome
 	/data_synology/software/samtools-0.1.19/samtools depth -Q 1 $< \
-		| perl /mnt/projects/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 \
+		| perl /mnt/projects/hdall/scripts/cnv/get-segment-coverage.pl --sample $* --bin-size 250000 --chr-sizes /mnt/projects/generic/data/hg19/ucsc.hg19.chrom.sizes --add-chr \
 		2>&1 1>$@.part | $(LOG)
 	mv $@.part $@
 
