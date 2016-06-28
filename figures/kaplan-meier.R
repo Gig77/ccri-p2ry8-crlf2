@@ -7,6 +7,7 @@ c <- read.delim("/mnt/projects/p2ry8-crlf2/data/clinical_data_for_kaplan_meier.t
 c$had_event <- c$event != "CCR"
 c$is_dead <- !is.na(c$date.of.death) & c$date.of.death != ""
 c$IKZF1_status_dia <- as.factor(c$IKZF1_status_dia)
+c <- c[!c$UPN %in% c("MA5", "957"),]
 
 # ==========================================================================================================
 
@@ -20,8 +21,8 @@ form <- Surv(time=on_study_time_OS, is_dead)~IKZF1_status_dia
 fit <- survfit(form, data=c) 
 plot(fit, col=c("red", "blue"), lty=c(1, 1), xlab="months", ylab="pOS", conf.int=F, xlim=c(0,125), yaxt='n', cex.axis=1.3, cex.lab=1.5)
 axis(side=2, at=seq(0, 1, by=0.1), cex.axis=1.3)
-text(60, fit[1]$surv[max(which(fit[1]$time<=60))]-0.08, sprintf("%.2f, SE=%.2f", fit[1]$surv[max(which(fit[1]$time<=60))], fit[1]$std.err[max(which(fit[1]$time<=60))]), col="red", adj=0, cex=1.3)
-text(60, fit[2]$surv[max(which(fit[2]$time<=60))]+0.04, sprintf("%.2f, SE=%.2f", fit[2]$surv[max(which(fit[2]$time<=60))], fit[2]$std.err[max(which(fit[2]$time<=60))]), col="blue", adj=0, cex=1.3)
+text(60, fit[1]$surv[max(which(fit[1]$time<=60))]+0.05, sprintf("%.2f, SE=%.2f", fit[1]$surv[max(which(fit[1]$time<=60))], fit[1]$std.err[max(which(fit[1]$time<=60))]), col="red", adj=0, cex=1.3)
+text(60, fit[2]$surv[max(which(fit[2]$time<=60))]+0.1, sprintf("%.2f, SE=%.2f", fit[2]$surv[max(which(fit[2]$time<=60))], fit[2]$std.err[max(which(fit[2]$time<=60))]), col="blue", adj=0, cex=1.3)
 legend("bottomright", c(sprintf("IKZF1 wt (%d/%d)", sum(fit[2]$n.event), fit[2]$n), sprintf("IKZF1 mut (%d/%d)", sum(fit[1]$n.event), fit[1]$n)), lwd=c(1,1), col=c("blue", "red"), lty=c(1, 1, 1), box.lwd=0.5)
 text(1, 0, substitute(italic(P) == p, list(p=gsub("0\\.", "\\.", sprintf("%.2g", 1 - pchisq(survdiff(form, data=c)$chisq, length(survdiff(form, data=c)$n) - 1))))), adj=0, cex=1.3)
 
