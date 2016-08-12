@@ -4,9 +4,6 @@ sample.table <- read.delim("/mnt/projects/ikaros/data/all_samples_unsupervised_c
 sample.table$IKZF1 <- as.factor(sample.table$IKZF1)
 sample.table$Subtype[grepl("CD19", sample.table$Subtype)] <- "CD19"
 
-# exclude some german samples
-sample.table <- sample.table[!sample.table$UPN %in% c("N7R", "AL9890R", "GI8D", "HV57D", "GI8R", "HV57R", "DL2R"),]
-
 # heatmap annotations 
 
 annotation.colors <- list(
@@ -45,12 +42,46 @@ counts <- as.matrix(counts)
 counts[is.na(counts)] <- 0
 counts <- counts[rowSums(counts) >= 100,] ; dim(counts)
 
+# EDAseq within-lane (GC content) and between-lane (library size) normalization
+
+gclength <- getBM(attributes=c("ensembl_gene_id", "percentage_gc_content", "transcript_length"), mart=mart)
+gclength <- gclength[order(gclength$ensembl_gene_id, -gclength$transcript_length),]
+gclength <- gclength[!duplicated(gclength$ensembl_gene_id),]
+gclength <- data.frame(id=gclength$ensembl_gene_id, gc=gclength$percentage_gc_content, length=gclength$transcript_length)
+rownames(gclength) <- gclength$id
+gclength <- gclength[,c("gc", "length")]
+
+library(EDASeq)
+common <- intersect(rownames(counts), rownames(gclength))
+counts <- counts[common,] ; dim(counts)
+gclength <- gclength[common,]
+edaseq.counts <- newSeqExpressionSet(counts=counts, featureData = gclength)
+edaseq.withinLane <- withinLaneNormalization(edaseq.counts, "gc", which="full", offset=TRUE, round=FALSE)
+edaseq.betweenLane <- betweenLaneNormalization(edaseq.withinLane, which="full", offset=TRUE, round=FALSE)
+
+# replace ensembl IDs with HGNC gene names in count matrix
+
+rownames(counts) <- ifelse(hgnc$hgnc_symbol[match(rownames(counts), hgnc$ensembl_gene_id)] != "", hgnc$hgnc_symbol[match(rownames(counts), hgnc$ensembl_gene_id)], rownames(counts))
+
 # DESeq2
 
+subtypes <- sample.table[, "Subtype", drop=F]
+subtypes$Subtype[sample.table$UPN %in% c("N7R", "AL9890R", "GI8D", "HV57D", "GI8R", "HV57R", "DL2R")] <- "excluded"
+subtypes$Subtype <- as.factor(subtypes$Subtype)
+
 library(DESeq2)
-dds <- DESeqDataSetFromMatrix(countData = counts, colData = sample.table[, "Subtype", drop=F], design = ~Subtype)
+dds <- DESeqDataSetFromMatrix(countData = counts, colData = subtypes, design = ~Subtype)
+normalizationFactors(dds) <- exp(-1 * offst(edaseq.betweenLane))
 dds <- DESeq(dds, minReplicatesForReplace=5)
 vst <- assay(varianceStabilizingTransformation(dds, blind=TRUE))
+
+# write out gene expression matrix
+write.table(
+  vst, 
+  "/mnt/projects/p2ry8-crlf2/results/ALL-primary-normalizedExpressionMatrix-for-unsupervised-clustering.tsv", 
+  col.names = paste0(sample.table$UPN[match(colnames(vst), rownames(sample.table))], "(", sample.table$Subtype[match(colnames(vst), rownames(sample.table))], ")"), 
+  row.names = T, sep="\t", quote = F
+)
 
 # get DEGs for all pairwise comparisons
 
@@ -87,8 +118,11 @@ for (comparison in names(results)){
   res <- results[[comparison]]
   
   sigUp <- res[!is.na(res$padj) & res$padj <= maxQ & !is.na(res$log2FoldChange) & res$log2FoldChange >= minFC,]
+  sigUp <- sigUp[!grepl("^ENSG0", rownames(sigUp)),]
   sigUp <- sigUp[1:min(nrow(sigUp), topN),]
+
   sigDn <- res[!is.na(res$padj) & res$padj <= maxQ & !is.na(res$log2FoldChange) & res$log2FoldChange <= -minFC,]
+  sigDn <- sigDn[!grepl("^ENSG0", rownames(sigDn)),]
   sigDn <- sigDn[1:min(nrow(sigDn), topN),]
   
   degs <- c(degs, rownames(sigUp))
@@ -99,19 +133,19 @@ degs <- unique(degs)
 # heatmap
 
 mf <- vst[degs,]
-rownames(mf) <- ifelse(hgnc$hgnc_symbol[match(rownames(mf), hgnc$ensembl_gene_id)] != "", hgnc$hgnc_symbol[match(rownames(mf), hgnc$ensembl_gene_id)], rownames(mf))
+mf <- t(scale(t(mf)))
+mf[mf<=-4] <- -4; mf[mf>=4] <- 4
 
-pdf("/mnt/projects/p2ry8-crlf2/results/rnaseq-clustering-topNGenes-pairwise-comparisons.pdf", width=10, height=10)
+pdf(paste0("/mnt/projects/p2ry8-crlf2/results/rnaseq-clustering-top", topN, "Genes-pairwise-comparisons.pdf"), width=10, height=10)
 
 library(pheatmap)
 pheatmap(
   mf,
-  main = paste("Top", topN, "up/dn-regulated genes from each pairwise comparisons"),
+  main = paste("Top", topN, "up/dn-regulated genes from each pairwise comparisons of subtypes"),
   clustering_method = "average",
   clustering_distance_rows = "correlation",
   clustering_distance_cols = "euclidean",
   col = rev(colorRampPalette(brewer.pal(10, "RdBu"))(256)),
-  scale="row",
   fontsize = 7,
   fontsize_row = 3,
   border_color=NA,
