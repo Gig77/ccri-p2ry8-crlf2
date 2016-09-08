@@ -148,14 +148,31 @@ for (geneset in gmt$V1) {
 
 genesets[["IACOBUCCI_2012_IKAROS_DELETED_UP_OR_DN"]] <- c(genesets[["IACOBUCCI_2012_IKAROS_DELETED_UP"]], genesets[["IACOBUCCI_2012_IKAROS_DELETED_DN"]])
 
+# Roberts 2012 TableS2 Ph-like Top50 up- and down-regulated genes
+
+roberts.2012 <- read.delim("/mnt/projects/ikaros/data/public/roberts_2012_tableS2.Ph-like.vs.other.txt", stringsAsFactors = F, check.names = F)
+roberts.2012 <- roberts.2012[roberts.2012$Gene_Symbol != "---", c("Gene_Symbol", "FoldChange(G2/G1)", "FDR")]
+names(roberts.2012) <- c("hgnc", "log2FC", "q")
+roberts.2012 <- roberts.2012[order(roberts.2012$q),]
+roberts.2012 <- roberts.2012[!duplicated(roberts.2012$hgnc),]
+roberts.2012 <- merge(roberts.2012, hgnc, by.x="hgnc", by.y="hgnc_symbol")
+roberts.2012 <- roberts.2012[roberts.2012$ensembl_gene_id %in% rownames(counts.normalized.transformed),]
+roberts.2012 <- roberts.2012[order(roberts.2012$q),]
+roberts.2012.top50 <- rbind(roberts.2012[roberts.2012$log2FC>0,][1:50,],roberts.2012[roberts.2012$log2FC<0,][1:50,])
+genesets[["ROBERTS_2012_TABLES2_TOP50_UP_AND_DN"]] <- roberts.2012.top50$ensembl_gene_id
+
 # plot clustered heatmap for each gene set
 
 for (geneset in names(genesets)) {
   print(geneset)
   geneset.genes <- genesets[[geneset]]
-  mf <- counts.edaseq.log[rownames(counts.edaseq.log) %in% geneset.genes,]
+  mf <- counts.normalized.transformed[rownames(counts.normalized.transformed) %in% geneset.genes,]
   mf <- mf[apply(mf, 1, sd) > 0,]
   rownames(mf) <- ifelse(hgnc$hgnc_symbol[match(rownames(mf), hgnc$ensembl_gene_id)] != "", hgnc$hgnc_symbol[match(rownames(mf), hgnc$ensembl_gene_id)], rownames(mf))
+  if(geneset=="ROBERTS_2012_TABLES2_TOP50_UP_AND_DN") {
+    dnreg <- rownames(mf) %in% roberts.2012$hgnc[roberts.2012$log2FC<0]
+    rownames(mf)[dnreg] <- paste0(rownames(mf)[dnreg], "*")
+  }
 
   pheatmap(
     mf,
