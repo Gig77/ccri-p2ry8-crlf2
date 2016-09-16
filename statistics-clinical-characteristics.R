@@ -25,7 +25,7 @@ fisher.test(t, workspace = 2e9)$p.value
 
 # WCC
 
-wcc.nonrel <- c(2, 86.3, 2.3, 30, 3.8, 7.8, 3.5, 5.5, 2.5, 114000, 3500, 6300, 1.7, 2.4, 5.2, 4.5, 19.4, 11.4, 2.3)
+wcc.nonrel <- c(2, 86.3, 2.3, 30, 3.8, 7.8, 3.5, 5.5, 2.5, 114, 3.5, 6.3, 1.7, 2.4, 5.2, 4.5, 19.4, 11.4, 2.3)
 wcc.rel <- c(3.6, 69.2, 83.7, 5.6, 67.8, 55.2, 95, 11.8, 19.4, 98.5, 75.7, 21.5, 14.5, 2.7, 27.2, 6.2, 61.4, 9.3, 452, 300, 158, 10.9)
 wcc.ctrl <- c(0.5, 0.8, 1.3, 1.5, 1.54, 3, 3.23, 3.7, 5.18, 7.8, 10.99, 14.25, 19.75, 27.09, 48.4, 189.8, 222)
 
@@ -53,3 +53,9 @@ fisher.test(t, workspace = 2e9)$p.value
 
 t <- as.table(matrix(c(14,21,6,3,15,2), nrow = 3, dimnames = list('Treatment arm'=c("SR", "IR", "HR"), 'Study'=c("This", "BFMAT")))) ; t
 fisher.test(t, workspace = 2e9)$p.value
+
+# IKZF1 dia and high blast count
+
+t <- as.table(matrix(c(5,3,6,8), nrow = 2, dimnames = list('Blast'=c("high", "low"), 'IKZF1'=c("mut", "wt")))) ; t
+fisher.test(t, workspace = 2e9)$p.value
+
